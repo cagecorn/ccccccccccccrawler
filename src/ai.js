@@ -76,10 +76,12 @@ export class CompositeAI extends AIArchetype {
 // --- 전사형 AI ---
 export class MeleeAI extends AIArchetype {
     decideAction(self, context) {
-        const { enemies, targetingEngine, pathfindingManager, player, mapManager } = context;
+        const { enemies, targetingEngine, pathfindingManager, player, mapManager, visionEngine } = context;
 
         // 1. 타겟 결정
-        const visibleEnemies = enemies.filter(e => Math.hypot(e.x - self.x, e.y - self.y) < self.visionRange);
+        const visibleEnemies = visionEngine
+            ? visionEngine.getVisibleTargets(self, enemies)
+            : enemies.filter(e => Math.hypot(e.x - self.x, e.y - self.y) < self.visionRange);
 
         const mbti = self.properties?.mbti || '';
         let rule = 'closest';
@@ -306,10 +308,12 @@ export class PurifierAI extends AIArchetype {
 // --- 원거리형 AI ---
 export class RangedAI extends AIArchetype {
     decideAction(self, context) {
-        const { player, allies, enemies, mapManager, eventManager } = context;
+        const { player, allies, enemies, mapManager, eventManager, visionEngine } = context;
 
         const currentVisionRange = self.stats?.get('visionRange') ?? self.visionRange;
-        const visibleEnemies = enemies.filter(e => Math.hypot(e.x - self.x, e.y - self.y) < currentVisionRange);
+        const visibleEnemies = visionEngine
+            ? visionEngine.getVisibleTargets(self, enemies)
+            : enemies.filter(e => Math.hypot(e.x - self.x, e.y - self.y) < currentVisionRange);
         const targetList = visibleEnemies;
 
         if (targetList.length === 0) {

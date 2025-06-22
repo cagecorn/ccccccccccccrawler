@@ -110,7 +110,15 @@ export class MetaAIManager {
                 if (!target || !mapManager || !vfxManager) break;
 
                 const fromPos = { x: entity.x, y: entity.y };
-                const behindX = target.x - (target.direction * (mapManager.tileSize * 0.8));
+                let dir = 1;
+                if (typeof target.direction === 'string') {
+                    dir = target.direction === 'left' ? -1 : 1;
+                } else if (typeof target.direction === 'number') {
+                    dir = target.direction;
+                } else if (target.direction && typeof target.direction === 'object' && typeof target.direction.x === 'number') {
+                    dir = Math.sign(target.direction.x) || 1;
+                }
+                const behindX = target.x - (dir * (mapManager.tileSize * 0.8));
                 const behindY = target.y;
                 const toPos = { x: behindX, y: behindY };
 
@@ -259,6 +267,10 @@ export class MetaAIManager {
                 
                 // AI가 행동을 결정한 직후 MBTI 엔진 처리
                 this.mbtiEngine.process(member, { ...action, context: currentContext });
+
+                if (context.visionEngine) {
+                    context.visionEngine.updateFacingDirection(member);
+                }
 
                 this.executeAction(member, action, currentContext);
             }

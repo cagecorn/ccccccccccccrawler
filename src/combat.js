@@ -38,7 +38,14 @@ export class CombatCalculator {
         if (!attacker || !defender) return false;
         const dx = defender.x - attacker.x;
         const dy = defender.y - attacker.y;
-        const facing = defender.direction || { x: 0, y: 1 };
+        let facing = { x: 0, y: 1 };
+        if (typeof defender.direction === 'string') {
+            facing = defender.direction === 'left' ? { x: -1, y: 0 } : { x: 1, y: 0 };
+        } else if (typeof defender.direction === 'number') {
+            facing = { x: defender.direction, y: 0 };
+        } else if (defender.direction && typeof defender.direction === 'object') {
+            facing = defender.direction;
+        }
         return (dx * facing.x + dy * facing.y) > 0;
     }
 

@@ -30,6 +30,7 @@ class Entity {
         this.effects = []; // 적용중인 효과 목록 배열 추가
         this.unitType = 'generic'; // 기본 유닛 타입을 '일반'으로 설정
         this.possessedBy = null; // 빙의 상태를 저장할 속성
+        this.direction = 'right'; // 시선 방향
 
         // --- AI 상태 저장용 프로퍼티 ---
         this.aiState = null;      // 현재 AI의 상태 (예: 'retreating')
@@ -144,7 +145,8 @@ class Entity {
         // 2. 유닛 이미지 그리기 (yOffset 적용)
         ctx.translate(0, yOffset);
         ctx.rotate(rotation);
-        ctx.scale(this.direction || 1, 1);
+        const scaleX = this.direction === 'left' ? -1 : 1;
+        ctx.scale(scaleX, 1);
         if (this.image) {
             ctx.drawImage(this.image, -this.width / 2, -this.height, this.width, this.height);
         }
