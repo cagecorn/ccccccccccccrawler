@@ -651,6 +651,7 @@ export class VFXManager {
                 ctx.restore();
             } else if (effect.type === 'flash') {
                 const { entity } = effect;
+                if (!entity || !entity.image) return;
                 ctx.save();
                 ctx.drawImage(entity.image, entity.x, entity.y, entity.width, entity.height);
                 ctx.globalCompositeOperation = 'source-atop';

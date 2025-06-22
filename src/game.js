@@ -629,17 +629,21 @@ export class Game {
         });
 
         eventManager.subscribe('entity_damaged', (data) => {
-            this.vfxManager.flashEntity(data.defender);
+            if (data.defender) {
+                this.vfxManager.flashEntity(data.defender);
 
-            // 수면 상태인지 확인
-            const sleepEffect = data.defender.effects.find(e => e.id === 'sleep');
-            if (sleepEffect) {
-                const hitsToWake = sleepEffect.wakeUpOnHit || 1;
-                sleepEffect.hitsTaken = (sleepEffect.hitsTaken || 0) + 1;
+                // 수면 상태인지 확인
+                if (Array.isArray(data.defender.effects)) {
+                    const sleepEffect = data.defender.effects.find(e => e.id === 'sleep');
+                    if (sleepEffect) {
+                        const hitsToWake = sleepEffect.wakeUpOnHit || 1;
+                        sleepEffect.hitsTaken = (sleepEffect.hitsTaken || 0) + 1;
 
-                if (sleepEffect.hitsTaken >= hitsToWake) {
-                    this.effectManager.removeEffect(data.defender, sleepEffect);
-                    this.eventManager.publish('log', { message: `\uD83D\uDCA4 ${data.defender.constructor.name}\uC774(가) 공격을 받고 깨어났습니다!`, color: 'yellow' });
+                        if (sleepEffect.hitsTaken >= hitsToWake) {
+                            this.effectManager.removeEffect(data.defender, sleepEffect);
+                            this.eventManager.publish('log', { message: `\uD83D\uDCA4 ${data.defender.constructor.name}\uC774(가) 공격을 받고 깨어났습니다!`, color: 'yellow' });
+                        }
+                    }
                 }
             }
         });

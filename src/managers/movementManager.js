@@ -84,12 +84,15 @@ export class MovementManager {
         }
     }
 
-    _isOccupied(x, y, self, context) {
+    _isOccupied(x, y, self, context = {}) {
         // 벽 충돌은 기존과 동일하게 우선 확인한다.
         if (this.mapManager.isWallAt(x, y, self.width, self.height)) return true;
 
         // 모든 유닛을 대상으로 충돌을 검사하여 서로를 장애물로 인식하도록 한다.
-        const allEntities = [context.player, ...context.mercenaryManager.mercenaries, ...context.monsterManager.monsters];
+        const allEntities = [];
+        if (context.player) allEntities.push(context.player);
+        if (context.mercenaryManager?.mercenaries) allEntities.push(...context.mercenaryManager.mercenaries);
+        if (context.monsterManager?.monsters) allEntities.push(...context.monsterManager.monsters);
 
         for (const other of allEntities) {
             if (other === self) continue;
