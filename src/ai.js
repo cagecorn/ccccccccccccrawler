@@ -80,7 +80,22 @@ export class CompositeAI extends AIArchetype {
 export class MeleeAI extends AIArchetype {
     // MetaAIManager가 타겟을 지정해 주므로, 여기서는 그 타겟을 어떻게 추적할지만 판단한다.
     decideAction(self, target, context) {
-        const { aiPathfindingEngine } = context;
+        const { aiPathfindingEngine, player, allies, mapManager } = context;
+        if (!target && self.isFriendly && !self.isPlayer && player) {
+            const wander = this._getWanderPosition(
+                self,
+                player,
+                allies || [],
+                mapManager
+            );
+            if (
+                Math.hypot(wander.x - self.x, wander.y - self.y) >
+                self.tileSize * 0.3
+            ) {
+                return { type: 'move', target: wander };
+            }
+        }
+
         return aiPathfindingEngine
             ? aiPathfindingEngine.decideAction(self, target, context)
             : { type: 'idle' };

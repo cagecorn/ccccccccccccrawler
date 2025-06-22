@@ -19,6 +19,7 @@ export class MonsterManager {
         }
         this.monsters = [];
         this.traitManager = null;
+        this.equipmentRenderManager = null;
         console.log("[MonsterManager] Initialized");
 
         if (this.eventManager) {
@@ -34,6 +35,17 @@ export class MonsterManager {
 
     setTraitManager(traitManager) {
         this.traitManager = traitManager;
+    }
+
+    add(monster) {
+        if (this.equipmentRenderManager) {
+            monster.equipmentRenderManager = this.equipmentRenderManager;
+        }
+        this.monsters.push(monster);
+    }
+
+    setEquipmentRenderManager(manager) {
+        this.equipmentRenderManager = manager;
     }
 
     _spawnMonsters(count) {
@@ -52,7 +64,7 @@ export class MonsterManager {
                     image: this.assets?.monster,
                     baseStats: stats
                 });
-                this.monsters.push(monster);
+                this.add(monster);
             }
         }
     }
