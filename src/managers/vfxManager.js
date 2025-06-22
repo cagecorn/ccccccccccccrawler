@@ -13,11 +13,6 @@ export class VFXManager {
         this.eventManager = eventManager;
         this.itemManager = itemManager;
         this.knockbackEffectDuration = 15;
-        if (this.eventManager) {
-            this.eventManager.subscribe('knockback_success', data => {
-                this.addKnockbackEffect(data.attacker, data.weapon);
-            });
-        }
         console.log("[VFXManager] Initialized with Internal Engines");
     }
 
@@ -390,6 +385,20 @@ export class VFXManager {
             color: options.color || 'rgba(255,0,0,0.5)'
         };
         this.effects.push(effect);
+    }
+
+    /**
+     * Knockback visual effect triggered directly by the engine.
+     * @param {number} x
+     * @param {number} y
+     */
+    addKnockbackVisual(x, y) {
+        this.addParticleBurst(x, y, {
+            count: 5,
+            color: 'rgba(255, 255, 255, 0.7)',
+            speed: 3,
+            lifespan: 20
+        });
     }
 
     addKnockbackEffect(attacker, weapon) {
