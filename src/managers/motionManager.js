@@ -118,10 +118,22 @@ export class MotionManager {
      */
     knockbackTarget(target, source, distance) {
         const angle = Math.atan2(target.y - source.y, target.x - source.x);
-        const destX = target.x + Math.cos(angle) * distance;
-        const destY = target.y + Math.sin(angle) * distance;
+        const step = this.mapManager.tileSize / 2;
+        const steps = Math.max(1, Math.ceil(distance / step));
 
-        if (this.mapManager.isWallAt(destX, destY, target.width, target.height)) {
+        let destX = target.x;
+        let destY = target.y;
+        for (let i = 1; i <= steps; i++) {
+            const checkX = target.x + Math.cos(angle) * step * i;
+            const checkY = target.y + Math.sin(angle) * step * i;
+            if (this.mapManager.isWallAt(checkX, checkY, target.width, target.height)) {
+                break;
+            }
+            destX = checkX;
+            destY = checkY;
+        }
+
+        if (destX === target.x && destY === target.y) {
             console.log('[MotionManager] 넉백 실패: 목적지에 벽이 있음');
             return null;
         }
