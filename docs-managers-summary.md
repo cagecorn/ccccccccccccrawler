@@ -64,6 +64,7 @@
 | `vfxManager.js` | 파티클 및 스프라이트 효과를 생성하여 시각 연출을 담당합니다. |
 | `vfx/ParticleEngine.js` | 파티클과 이미터 생성을 전담하는 내부 엔진입니다. |
 | `vfx/TextPopupEngine.js` | 데미지 수치 등 부유하는 텍스트 팝업을 관리합니다. |
+| `../ui/TooltipEngine.js` | 화면 마우스 위치를 따라다니며 툴팁을 표시합니다. |
 | `../systems/KnockbackEngine.js` | 공격 피격 시 대상에게 밀쳐내기 효과와 시각 연출을 적용합니다. |
 | `../micro/MicroEngine.js` | 미시 세계 전투와 아이템 상태 갱신을 담당하는 엔진입니다. |
 | `../micro/MicroTurnManager.js` | 모든 아이템의 쿨타임 감소를 전담합니다. |

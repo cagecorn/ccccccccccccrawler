@@ -37,6 +37,7 @@ import { Ghost } from './entities.js';
 import { TankerGhostAI, RangedGhostAI, SupporterGhostAI, CCGhostAI } from './ai.js';
 import { EMBLEMS } from './data/emblems.js';
 import { adjustMonsterStatsForAquarium } from './utils/aquariumUtils.js';
+import { TooltipEngine } from './ui/TooltipEngine.js';
 
 export class Game {
     constructor() {
@@ -107,6 +108,7 @@ export class Game {
         this.turnManager = new TurnManager();
         this.narrativeManager = new NarrativeManager();
         this.supportEngine = new SupportEngine();
+        this.tooltipEngine = new TooltipEngine();
         this.factory = new CharacterFactory(assets, this);
 
         // --- 매니저 생성 부분 수정 ---
@@ -126,11 +128,15 @@ export class Game {
                 name !== 'ItemAIManager' &&
                 name !== 'EffectManager' &&
                 name !== 'SkillManager' &&
-                name !== 'ProjectileManager'
+                name !== 'ProjectileManager' &&
+                name !== 'UIManager'
         );
         for (const managerName of otherManagerNames) {
             this.managers[managerName] = new Managers[managerName](this.eventManager, assets, this.factory);
         }
+
+        this.managers.UIManager = new Managers.UIManager(this.tooltipEngine);
+        this.uiManager = this.managers.UIManager;
 
         this.managers.EffectManager = new Managers.EffectManager(
             this.eventManager,
@@ -141,7 +147,6 @@ export class Game {
         this.mercenaryManager = this.managers.MercenaryManager;
         this.itemManager = this.managers.ItemManager;
         this.equipmentManager = this.managers.EquipmentManager;
-        this.uiManager = this.managers.UIManager;
         this.vfxManager = this.managers.VFXManager;
         this.soundManager = this.managers.SoundManager;
         this.effectManager = this.managers.EffectManager;
