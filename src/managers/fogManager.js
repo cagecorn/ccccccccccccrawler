@@ -5,9 +5,10 @@ import { hasLineOfSight } from '../utils/geometry.js';
 export const FOG_STATE = { UNSEEN: 0, SEEN: 1, VISIBLE: 2 };
 
 export class FogManager {
-    constructor(width, height) {
+    constructor(width, height, tileSize = 32) {
         this.width = width;
         this.height = height;
+        this.tileSize = tileSize;
         // 모든 타일을 '본 적 없는' 상태로 초기화
         this.fogMap = Array.from({ length: height }, () => Array(width).fill(FOG_STATE.UNSEEN));
     }
@@ -62,5 +63,9 @@ export class FogManager {
                 }
             }
         }
+    }
+
+    isVisible(tileX, tileY) {
+        return this.fogMap[tileY]?.[tileX] === FOG_STATE.VISIBLE;
     }
 }

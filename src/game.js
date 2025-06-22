@@ -20,6 +20,7 @@ import { PathfindingManager } from './managers/pathfindingManager.js';
 import { AIPathfindingEngine } from './ai/AIPathfindingEngine.js';
 import { MovementManager } from './managers/movementManager.js';
 import { FogManager } from './managers/fogManager.js';
+import { QuantumManager } from './managers/QuantumManager.js';
 import { NarrativeManager } from './managers/narrativeManager.js';
 import { TurnManager } from './managers/turnManager.js';
 import { KnockbackEngine } from './systems/KnockbackEngine.js';
@@ -141,7 +142,8 @@ export class Game {
                 name !== 'SkillManager' &&
                 name !== 'ProjectileManager' &&
                 name !== 'UIManager' &&
-                name !== 'MercenaryManager'
+                name !== 'MercenaryManager' &&
+                name !== 'QuantumManager'
         );
         for (const managerName of otherManagerNames) {
             this.managers[managerName] = new Managers[managerName](this.eventManager, assets, this.factory);
@@ -200,7 +202,7 @@ export class Game {
         );
         this.itemAIManager.setEffectManager(this.effectManager);
         this.movementManager = new MovementManager(this.mapManager);
-        this.fogManager = new FogManager(this.mapManager.width, this.mapManager.height);
+        this.fogManager = new FogManager(this.mapManager.width, this.mapManager.height, this.mapManager.tileSize);
         this.particleDecoratorManager = new Managers.ParticleDecoratorManager();
         this.particleDecoratorManager.setManagers(this.vfxManager, this.mapManager);
         this.particleDecoratorManager.init();
@@ -210,6 +212,16 @@ export class Game {
         this.uiManager.particleDecoratorManager = this.particleDecoratorManager;
         this.uiManager.vfxManager = this.vfxManager;
         this.metaAIManager = new MetaAIManager(this.eventManager);
+        this.quantumManager = new QuantumManager(
+            this.factory,
+            this.monsterManager,
+            this.metaAIManager,
+            this.equipmentManager,
+            this.parasiteManager,
+            this.traitManager,
+            this.mapManager
+        );
+        this.managers.QuantumManager = this.quantumManager;
         this.possessionAIManager = null;
         if (SETTINGS.ENABLE_POSSESSION_AI) {
             this.possessionAIManager = new PossessionAIManager(this.eventManager);
@@ -227,15 +239,7 @@ export class Game {
         );
         this.managers.SkillManager = this.skillManager;
 
-        this.spawningEngine = new SpawningEngine(
-            this.monsterManager,
-            this.factory,
-            this.mapManager,
-            this.equipmentManager,
-            this.parasiteManager,
-            this.equipmentRenderManager
-        );
-        this.spawningEngine.monsterManager.metaAI = this.metaAIManager;
+        this.spawningEngine = new SpawningEngine(this.quantumManager, this.mapManager);
 
         if (SETTINGS.ENABLE_POSSESSION_AI && this.possessionAIManager) {
             const ghostAIs = {
@@ -1158,6 +1162,7 @@ export class Game {
             }
         }
         this.fogManager.update(player, mapManager);
+        this.quantumManager.update(this.fogManager);
         const context = {
             eventManager,
             player,
