@@ -194,6 +194,13 @@ export class MetaAIManager {
                     movementManager.moveEntityTowards(entity, action.target, context);
                 }
                 break;
+            case 'follow_path': {
+                const { movementManager } = context;
+                if (movementManager && action.path && action.path.length > 0) {
+                    movementManager.setPath(entity, action.path);
+                    movementManager.followPath(entity, context);
+                }
+                break; }
         }
     }
 

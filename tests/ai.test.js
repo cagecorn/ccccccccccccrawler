@@ -21,24 +21,22 @@ test('MeleeAI - 공격 결정', () => {
 test('MeleeAI - 이동 결정', () => {
     const ai = new MeleeAI();
     const self = { x: 0, y: 0, visionRange: 100, attackRange: 10, speed: 5, tileSize: 1 };
-    const context = { player: {}, allies: [], enemies: [{ x: 20, y: 0 }], mapManager: mapStub };
+    const pfStub = { findPath: () => [{ x: 1, y: 0 }] };
+    const context = { player: {}, allies: [], enemies: [{ x: 20, y: 0 }], mapManager: mapStub, pathfindingManager: pfStub };
     const action = ai.decideAction(self, context);
-    assert.strictEqual(action.type, 'move');
+    assert.strictEqual(action.type, 'follow_path');
+    assert.ok(Array.isArray(action.path));
 });
 
 // 아군이 플레이어를 따라가는지 확인
 
-test('MeleeAI - 플레이어 추적', () => {
+test('MeleeAI - 목줄 범위 내에서는 대기', () => {
     const ai = new MeleeAI();
     const self = { x: 0, y: 0, visionRange: 100, attackRange: 10, speed: 5, tileSize: 1, isFriendly: true, isPlayer: false };
     const player = { x: 10, y: 0 };
     const context = { player, allies: [], enemies: [], mapManager: mapStub };
-    const orig = Math.random;
-    Math.random = () => 0;
     const action = ai.decideAction(self, context);
-    Math.random = orig;
-    assert.strictEqual(action.type, 'move');
-    assert.deepStrictEqual(action.target, { x: 11, y: 0 });
+    assert.strictEqual(action.type, 'idle');
 });
 
 // RangedAI specific behavior
