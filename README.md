@@ -60,6 +60,7 @@
 ## Additional Documentation
 
 For detailed gameplay instructions, see [GAMEPLAY_GUIDE.md](GAMEPLAY_GUIDE.md).
+For bow-related skill implementation notes, see [BOW_SKILL_NOTE.md](BOW_SKILL_NOTE.md).
 
 
 ## 결함 주입 테스트
