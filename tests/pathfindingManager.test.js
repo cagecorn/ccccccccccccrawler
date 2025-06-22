@@ -10,18 +10,18 @@ test('생성', () => {
 
 test('단순 경로 탐색', () => {
     const mapManager = {
+        tileTypes: { FLOOR:0, WALL:1 },
         map: [
-            [0,0,0],
-            [0,0,0],
-            [0,0,0]
+            [{type:0},{type:0},{type:0}],
+            [{type:0},{type:0},{type:0}],
+            [{type:0},{type:0},{type:0}]
         ],
         width: 3,
         height:3,
         tileSize:1,
-        tileTypes: { FLOOR:0, WALL:1 },
         isWallAt(x,y){
             const tx = Math.floor(x/1); const ty=Math.floor(y/1);
-            return this.map[ty][tx]===this.tileTypes.WALL;
+            return this.map[ty][tx].type===this.tileTypes.WALL;
         }
     };
     const pfManager = new PathfindingManager(mapManager);
@@ -31,18 +31,18 @@ test('단순 경로 탐색', () => {
 
 test('같은 지점은 경로 없음', () => {
     const mapManager = {
+        tileTypes:{FLOOR:0,WALL:1},
         map: [
-            [0,0,0],
-            [0,0,0],
-            [0,0,0]
+            [{type:0},{type:0},{type:0}],
+            [{type:0},{type:0},{type:0}],
+            [{type:0},{type:0},{type:0}]
         ],
         width:3,
         height:3,
         tileSize:1,
-        tileTypes:{FLOOR:0,WALL:1},
         isWallAt(x,y){
             const tx=Math.floor(x/1); const ty=Math.floor(y/1);
-            return this.map[ty][tx]===this.tileTypes.WALL;
+            return this.map[ty][tx].type===this.tileTypes.WALL;
         }
     };
     const pfManager = new PathfindingManager(mapManager);
@@ -52,18 +52,18 @@ test('같은 지점은 경로 없음', () => {
 
 test('동적 장애물 회피', () => {
     const mapManager = {
+        tileTypes:{FLOOR:0,WALL:1},
         map: [
-            [0,0,0],
-            [0,0,0],
-            [0,0,0]
+            [{type:0},{type:0},{type:0}],
+            [{type:0},{type:0},{type:0}],
+            [{type:0},{type:0},{type:0}]
         ],
         width:3,
         height:3,
         tileSize:1,
-        tileTypes:{FLOOR:0,WALL:1},
         isWallAt(x,y){
             const tx=Math.floor(x/1); const ty=Math.floor(y/1);
-            return this.map[ty][tx]===this.tileTypes.WALL;
+            return this.map[ty][tx].type===this.tileTypes.WALL;
         }
     };
     const pfManager = new PathfindingManager(mapManager);
@@ -79,18 +79,18 @@ test('동적 장애물 회피', () => {
 
 test('탈출 경로 탐색', () => {
     const mapManager = {
+        tileTypes:{FLOOR:0,WALL:1},
         map: [
-            [1,1,1],
-            [1,0,0],
-            [1,1,1]
+            [{type:1},{type:1},{type:1}],
+            [{type:1},{type:0},{type:0}],
+            [{type:1},{type:1},{type:1}]
         ],
         width:3,
         height:3,
         tileSize:1,
-        tileTypes:{FLOOR:0,WALL:1},
         isWallAt(x,y){
             const tx=Math.floor(x/1); const ty=Math.floor(y/1);
-            return this.map[ty][tx]===this.tileTypes.WALL;
+            return this.map[ty][tx].type===this.tileTypes.WALL;
         }
     };
     const pfManager = new PathfindingManager(mapManager);
