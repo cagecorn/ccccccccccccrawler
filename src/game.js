@@ -39,6 +39,7 @@ import { TankerGhostAI, RangedGhostAI, SupporterGhostAI, CCGhostAI } from './ai.
 import { EMBLEMS } from './data/emblems.js';
 import { adjustMonsterStatsForAquarium } from './utils/aquariumUtils.js';
 import { TooltipEngine } from './ui/TooltipEngine.js';
+import { TargetingEngine } from './ai/TargetingEngine.js';
 
 export class Game {
     constructor() {
@@ -109,6 +110,7 @@ export class Game {
         this.turnManager = new TurnManager();
         this.narrativeManager = new NarrativeManager();
         this.supportEngine = new SupportEngine();
+        this.targetingEngine = new TargetingEngine();
         this.inventoryEngine = new InventoryEngine(this.eventManager);
         this.tooltipEngine = new TooltipEngine();
         this.factory = new CharacterFactory(assets, this);
@@ -1189,6 +1191,7 @@ export class Game {
             vfxManager: this.vfxManager,
             knockbackEngine: this.knockbackEngine,
             supportEngine: this.supportEngine,
+            targetingEngine: this.targetingEngine,
             assets: this.loader.assets,
             metaAIManager,
             microItemAIManager,

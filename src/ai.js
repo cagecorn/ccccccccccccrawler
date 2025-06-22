@@ -76,13 +76,12 @@ export class CompositeAI extends AIArchetype {
 // --- 전사형 AI ---
 export class MeleeAI extends AIArchetype {
     decideAction(self, context) {
-        const { player, allies, enemies, mapManager, eventManager } = context;
+        const { player, allies, enemies, mapManager, targetingEngine } = context;
 
         const currentVisionRange = self.stats?.get('visionRange') ?? self.visionRange;
         const visibleEnemies = enemies.filter(e => Math.hypot(e.x - self.x, e.y - self.y) < currentVisionRange);
-        const targetList = visibleEnemies;
 
-        if (targetList.length === 0) {
+        if (visibleEnemies.length === 0) {
             if (self.isFriendly && !self.isPlayer) {
                 const target = this._getWanderPosition(self, player, allies, mapManager);
                 if (Math.hypot(target.x - self.x, target.y - self.y) > self.tileSize * 0.3) {
@@ -92,75 +91,64 @@ export class MeleeAI extends AIArchetype {
             return { type: 'idle' };
         }
 
-        // 1. 가장 가까운 적 찾기
-        let nearestTarget = null;
-        let minDistance = Infinity;
-
-        // T/F 성향에 따른 타겟팅 로직
         const mbti = self.properties?.mbti || '';
-        let potentialTargets = [...targetList];
-        if (mbti.includes('T')) {
-            potentialTargets.sort((a, b) => a.hp - b.hp);
-        } else if (mbti.includes('F')) {
-            const allyTargets = new Set();
-            allies.forEach(ally => {
-                if (ally.currentTarget) allyTargets.add(ally.currentTarget.id);
-            });
-            const focusedTarget = potentialTargets.find(t => allyTargets.has(t.id));
-            if (focusedTarget) {
-                potentialTargets = [focusedTarget];
+        let rule = 'closest';
+        if (mbti.includes('T')) rule = 'weakest';
+        else if (mbti.includes('F')) rule = 'ally_focus';
+
+        let target = null;
+        if (targetingEngine) {
+            target = targetingEngine.findBestTarget(self, visibleEnemies, { rule, context });
+        } else {
+            let potentialTargets = [...visibleEnemies];
+            if (mbti.includes('T')) {
+                potentialTargets.sort((a, b) => a.hp - b.hp);
+            } else if (mbti.includes('F')) {
+                const allyTargets = new Set();
+                allies.forEach(ally => {
+                    if (ally.currentTarget) allyTargets.add(ally.currentTarget.id);
+                });
+                const focusedTarget = potentialTargets.find(t => allyTargets.has(t.id));
+                if (focusedTarget) {
+                    potentialTargets = [focusedTarget];
+                }
             }
+            target = potentialTargets.reduce((nearest, cur) => {
+                if (!nearest) return cur;
+                const d1 = Math.hypot(cur.x - self.x, cur.y - self.y);
+                const d2 = Math.hypot(nearest.x - self.x, nearest.y - self.y);
+                return d1 < d2 ? cur : nearest;
+            }, null);
         }
 
-        for (const target of potentialTargets) {
-            const dx = target.x - self.x;
-            const dy = target.y - self.y;
-            const distance = Math.sqrt(dx * dx + dy * dy);
-            if (distance < minDistance) {
-                minDistance = distance;
-                nearestTarget = target;
-            }
-        }
+        self.currentTarget = target;
 
-        self.currentTarget = nearestTarget;
-
-        // 2. 행동 결정
-        if (nearestTarget) {
+        if (target) {
+            const distance = Math.hypot(target.x - self.x, target.y - self.y);
             const hasLOS = hasLineOfSight(
                 Math.floor(self.x / mapManager.tileSize),
                 Math.floor(self.y / mapManager.tileSize),
-                Math.floor(nearestTarget.x / mapManager.tileSize),
-                Math.floor(nearestTarget.y / mapManager.tileSize),
+                Math.floor(target.x / mapManager.tileSize),
+                Math.floor(target.y / mapManager.tileSize),
                 mapManager
             );
 
-            if (!hasLOS && self.isFriendly && !self.isPlayer) {
-                const playerDistance = Math.sqrt(Math.pow(player.x - self.x, 2) + Math.pow(player.y - self.y, 2));
-                if (playerDistance > self.tileSize) {
-                    return { type: 'move', target: player };
-                }
-            }
-            // 돌진 스킬 확인 및 P 성향 표시
             const chargeSkill = Array.isArray(self.skills)
                 ? self.skills.map(id => SKILLS[id]).find(s => s && s.tags && s.tags.includes('charge'))
                 : null;
-            if (mbti.includes('P')) {
-                // P 성향은 돌진 성향을 강화합니다
-            }
 
             if (
                 !self.isPlayer &&
                 chargeSkill &&
-                minDistance > self.attackRange &&
-                minDistance <= chargeSkill.chargeRange &&
+                distance > self.attackRange &&
+                distance <= chargeSkill.chargeRange &&
                 self.mp >= chargeSkill.manaCost &&
                 (self.skillCooldowns[chargeSkill.id] || 0) <= 0
             ) {
-                return { type: 'charge_attack', target: nearestTarget, skill: chargeSkill };
+                return { type: 'charge_attack', target, skill: chargeSkill };
             }
 
-            if (hasLOS && minDistance < self.attackRange) {
-                // 사용할 수 있는 스킬이 있다면 스킬 사용
+            if (hasLOS && distance < self.attackRange) {
                 const skillId = self.skills && self.skills[0];
                 const skill = SKILLS[skillId];
                 if (
@@ -168,33 +156,18 @@ export class MeleeAI extends AIArchetype {
                     self.mp >= skill.manaCost &&
                     (self.skillCooldowns[skillId] || 0) <= 0
                 ) {
-                    if (mbti.includes('S')) {
-                        // 감각형은 스킬 사용을 선호
-                    } else if (mbti.includes('N') && self.hp / self.maxHp < 0.6) {
-                        // 직관형은 체력이 낮을 때 스킬 사용
-                    }
-                    return { type: 'skill', target: nearestTarget, skillId };
+                    return { type: 'skill', target, skillId };
                 }
-
-                // 공격 범위 안에 있으면 기본 공격
-                return { type: 'attack', target: nearestTarget };
+                return { type: 'attack', target };
             }
 
-            if (hasLOS && minDistance <= self.speed) {
-                // 너무 가까우면 더 이상 다가가지 않음
+            if (hasLOS && distance <= self.speed) {
                 return { type: 'idle' };
             }
 
-            // 목표 지점을 향해 이동 (시야가 가려져 있어도 탐색)
-            return { type: 'move', target: nearestTarget };
-        } else if (self.isFriendly && !self.isPlayer) {
-            const target = this._getWanderPosition(self, player, allies, mapManager);
-            if (Math.hypot(target.x - self.x, target.y - self.y) > self.tileSize * 0.3) {
-                return { type: 'move', target };
-            }
+            return { type: 'move', target };
         }
-        
-        // 기본 상태는 대기
+
         return { type: 'idle' };
     }
 }
