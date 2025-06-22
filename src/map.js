@@ -4,9 +4,6 @@ const TILE_TYPES = {
     FLOOR: 0,
     WALL: 1,
     LAVA: 2,
-    CHASM: 3,
-    STAIRS_UP: 4,
-    STAIRS_DOWN: 5,
 };
 
 export class MapManager {
@@ -18,10 +15,7 @@ export class MapManager {
         this.tileTypes = TILE_TYPES;
         this.rooms = [];
         this.corridorWidth = 5; // 전역적으로 사용할 통로 너비
-        this.map = Array.from({ length: this.height }, () =>
-            Array(this.width).fill(null)
-        );
-        this._generateMaze();
+        this.map = this._generateMaze();
     }
 
     _random() {
@@ -32,13 +26,8 @@ export class MapManager {
     }
 
     _generateMaze() {
-        const map = this.map;
-
-        for (let y = 0; y < this.height; y++) {
-            for (let x = 0; x < this.width; x++) {
-                map[y][x] = { type: this.tileTypes.WALL, elevation: 0, decor: null };
-            }
-        }
+        // 전체 맵을 벽으로 초기화
+        const map = Array.from({ length: this.height }, () => Array(this.width).fill(this.tileTypes.WALL));
 
         // 1. 방 생성 (기존과 동일)
         this._generateRooms(map);
@@ -54,8 +43,6 @@ export class MapManager {
 
         // 5. 특수 지형 배치 (용암 등)
         this._addLavaPools(map, 0.02);
-
-        this._createPlateau(map, 15, 15, 20, 15, 1);
 
         return map;
     }
@@ -83,7 +70,7 @@ export class MapManager {
             // 방 생성
             for (let y = roomY; y < roomY + roomH; y++) {
                 for (let x = roomX; x < roomX + roomW; x++) {
-                    map[y][x].type = this.tileTypes.FLOOR;
+                    map[y][x] = this.tileTypes.FLOOR;
                 }
             }
             this.rooms.push({ x: roomX, y: roomY, width: roomW, height: roomH });
@@ -165,7 +152,7 @@ export class MapManager {
         for (let y = centerY - halfWidth; y <= centerY + halfWidth; y++) {
             for (let x = centerX - halfWidth; x <= centerX + halfWidth; x++) {
                 if (y >= 0 && y < this.height && x >= 0 && x < this.width) {
-                    map[y][x].type = this.tileTypes.FLOOR;
+                    map[y][x] = this.tileTypes.FLOOR;
                 }
             }
         }
@@ -182,7 +169,7 @@ export class MapManager {
             for (let y = minY; y <= maxY; y++) {
                 for (let x = x1 - halfWidth; x <= x1 + halfWidth; x++) {
                     if (x >= 0 && x < this.width && y >= 0 && y < this.height) {
-                        map[y][x].type = this.tileTypes.FLOOR;
+                        map[y][x] = this.tileTypes.FLOOR;
                     }
                 }
             }
@@ -195,7 +182,7 @@ export class MapManager {
             for (let x = minX; x <= maxX; x++) {
                 for (let y = y1 - halfWidth; y <= y1 + halfWidth; y++) {
                     if (x >= 0 && x < this.width && y >= 0 && y < this.height) {
-                        map[y][x].type = this.tileTypes.FLOOR;
+                        map[y][x] = this.tileTypes.FLOOR;
                     }
                 }
             }
@@ -214,7 +201,7 @@ export class MapManager {
         for (let y = centerY - halfSize; y <= centerY + halfSize; y++) {
             for (let x = centerX - halfSize; x <= centerX + halfSize; x++) {
                 if (y >= 0 && y < this.height && x >= 0 && x < this.width) {
-                    if (map[y][x].type === this.tileTypes.FLOOR) {
+                    if (map[y][x] === this.tileTypes.FLOOR) {
                         return false;
                     }
                 }
@@ -254,7 +241,7 @@ export class MapManager {
         
         for (let y = 0; y < this.height; y++) {
             for (let x = 0; x < this.width; x++) {
-                if (map[y][x].type === this.tileTypes.FLOOR) {
+                if (map[y][x] === this.tileTypes.FLOOR) {
                     // 현재 방 영역은 제외
                     if (x >= excludeRoom.x && x < excludeRoom.x + excludeRoom.width &&
                         y >= excludeRoom.y && y < excludeRoom.y + excludeRoom.height) {
@@ -277,12 +264,12 @@ export class MapManager {
         // 기존 코드와 동일하지만, 넓은 통로를 고려하여 수정
         for (let y = this.corridorWidth; y < this.height - this.corridorWidth; y++) {
             for (let x = this.corridorWidth; x < this.width - this.corridorWidth; x++) {
-                if (map[y][x].type === this.tileTypes.FLOOR) {
+                if (map[y][x] === this.tileTypes.FLOOR) {
                     let openDirections = 0;
                     const directions = [{x:0,y:-1}, {x:0,y:1}, {x:-1,y:0}, {x:1,y:0}];
                     
                     for (const dir of directions) {
-                        if (map[y + dir.y][x + dir.x].type === this.tileTypes.FLOOR) {
+                        if (map[y + dir.y][x + dir.x] === this.tileTypes.FLOOR) {
                             openDirections++;
                         }
                     }
@@ -290,7 +277,7 @@ export class MapManager {
                     // 막다른 길인 경우 (1개 방향으로만 열림)
                     if (openDirections === 1 && this._random() < chance) {
                         const availableDirections = directions.filter(dir => 
-                            map[y + dir.y] && map[y + dir.y][x + dir.x].type === this.tileTypes.WALL
+                            map[y + dir.y] && map[y + dir.y][x + dir.x] === this.tileTypes.WALL
                         );
                         
                         if (availableDirections.length > 0) {
@@ -306,24 +293,14 @@ export class MapManager {
     _addLavaPools(map, chance = 0.02, size = 3) {
         for (let y = 1; y < this.height - 1; y++) {
             for (let x = 1; x < this.width - 1; x++) {
-                if (map[y][x].type === this.tileTypes.FLOOR && this._random() < chance) {
+                if (map[y][x] === this.tileTypes.FLOOR && this._random() < chance) {
                     for (let py = y; py < y + size && py < this.height - 1; py++) {
                         for (let px = x; px < x + size && px < this.width - 1; px++) {
-                            if (map[py][px].type === this.tileTypes.FLOOR) {
-                                map[py][px].type = this.tileTypes.LAVA;
+                            if (map[py][px] === this.tileTypes.FLOOR) {
+                                map[py][px] = this.tileTypes.LAVA;
                             }
                         }
                     }
-                }
-            }
-        }
-    }
-
-    _createPlateau(map, startX, startY, width, height, elevation) {
-        for (let y = startY; y < startY + height; y++) {
-            for (let x = startX; x < startX + width; x++) {
-                if (map[y] && map[y][x] && map[y][x].type === this.tileTypes.FLOOR) {
-                    map[y][x].elevation = elevation;
                 }
             }
         }
@@ -333,7 +310,7 @@ export class MapManager {
         let count = 0;
         for (let y = 0; y < this.height; y++) {
             for (let x = 0; x < this.width; x++) {
-                if (this.map[y][x].type === type) count++;
+                if (this.map[y][x] === type) count++;
             }
         }
         return count;
@@ -348,7 +325,7 @@ export class MapManager {
             let canPlace = true;
             for (let i = 0; i < sizeInTiles.w; i++) {
                 for (let j = 0; j < sizeInTiles.h; j++) {
-                    if (this.map[y + j][x + i].type !== this.tileTypes.FLOOR) {
+                    if (this.map[y + j][x + i] !== this.tileTypes.FLOOR) {
                         canPlace = false;
                         break;
                     }
@@ -375,52 +352,49 @@ export class MapManager {
             const mapX = Math.floor(point.x / this.tileSize);
             const mapY = Math.floor(point.y / this.tileSize);
             if (mapX < 0 || mapX >= this.width || mapY < 0 || mapY >= this.height) return true;
-
-            const tile = this.map[mapY][mapX];
-            if (tile.type === this.tileTypes.WALL || tile.type === this.tileTypes.CHASM) return true;
+            if (this.map[mapY][mapX] === this.tileTypes.WALL) return true;
         }
         return false;
     }
 
     render(contexts, assets) {
         const { mapBase: ctxBase, mapDecor: ctxDecor, vfx: ctxVfx } = contexts;
-        const cliffImage = assets.wall_face || assets.wall;
+        if (!ctxBase || !ctxDecor || !ctxVfx) {
+            console.error("Map rendering requires mapBase, mapDecor, and vfx contexts.");
+            return;
+        }
+
         const wallTopImage = assets.wall;
+        const wallFaceImage = assets.wall_face;
         const floorImage = assets.floor;
         const lavaImage = assets.lava || floorImage;
 
         for (let y = 0; y < this.height; y++) {
             for (let x = 0; x < this.width; x++) {
-                const tile = this.map[y][x];
 
-                // 1. 바닥 그리기 (모든 타일 아래에)
-                let baseImage = floorImage;
-                if (tile.type === this.tileTypes.LAVA) baseImage = lavaImage;
-                else if (tile.type === this.tileTypes.CHASM) baseImage = null;
-
-                if (baseImage) {
-                    ctxBase.drawImage(baseImage, x * this.tileSize, y * this.tileSize - (tile.elevation * this.tileSize / 2), this.tileSize, this.tileSize);
+                // 1. 항상 기본 바닥 타일을 먼저 그립니다.
+                if (floorImage) {
+                    ctxBase.drawImage(floorImage, x * this.tileSize, y * this.tileSize, this.tileSize, this.tileSize);
                 }
 
-                // 2. 절벽 그리기: 현재 타일이 아랫 타일보다 높을 때
-                const lowerTile = (y + 1 < this.height) ? this.map[y + 1][x] : null;
-                if (lowerTile && tile.elevation > lowerTile.elevation) {
-                    if (cliffImage) {
-                        ctxDecor.drawImage(cliffImage, x * this.tileSize, (y + 1) * this.tileSize - (lowerTile.elevation * this.tileSize / 2) - this.tileSize / 2, this.tileSize, this.tileSize);
-                    }
-                }
-
-                // 3. 벽 그리기 (입체감 적용)
-                if (tile.type === this.tileTypes.WALL) {
-                    const upperTile = (y > 0) ? this.map[y - 1][x] : null;
-                    if (upperTile && upperTile.type !== this.tileTypes.WALL) {
-                        if (cliffImage) {
-                            ctxDecor.drawImage(cliffImage, x * this.tileSize, y * this.tileSize, this.tileSize, this.tileSize);
+                // 2. 현재 타일이 벽일 경우, 입체적으로 그립니다.
+                if (this.map[y][x] === this.tileTypes.WALL) {
+                    // 바로 윗 타일이 벽이 아닐 경우에만 '벽면'을 그립니다.
+                    if (y > 0 && this.map[y - 1][x] !== this.tileTypes.WALL) {
+                        if (wallFaceImage) {
+                            // 벽면은 캐릭터보다 아래 레이어(mapDecor)에 그립니다.
+                            ctxDecor.drawImage(wallFaceImage, x * this.tileSize, y * this.tileSize, this.tileSize, this.tileSize);
                         }
                     }
 
+                    // '벽 윗면'은 캐릭터보다 높은 레이어(vfx)에 그려서 발 부분을 가리도록 합니다.
                     if (wallTopImage) {
                         ctxVfx.drawImage(wallTopImage, x * this.tileSize, y * this.tileSize, this.tileSize, this.tileSize);
+                    }
+                } else if (this.map[y][x] === this.tileTypes.LAVA) {
+                    // 기본 바닥 대신 용암 타일을 그립니다.
+                    if (lavaImage) {
+                        ctxBase.drawImage(lavaImage, x * this.tileSize, y * this.tileSize, this.tileSize, this.tileSize);
                     }
                 }
             }
