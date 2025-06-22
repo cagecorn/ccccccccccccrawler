@@ -101,9 +101,6 @@ export class MeleeAI extends AIArchetype {
         let potentialTargets = [...targetList];
         if (mbti.includes('T')) {
             potentialTargets.sort((a, b) => a.hp - b.hp);
-            if (potentialTargets.length > 0) {
-                eventManager?.publish('ai_mbti_trait_triggered', { entity: self, trait: 'T' });
-            }
         } else if (mbti.includes('F')) {
             const allyTargets = new Set();
             allies.forEach(ally => {
@@ -112,7 +109,6 @@ export class MeleeAI extends AIArchetype {
             const focusedTarget = potentialTargets.find(t => allyTargets.has(t.id));
             if (focusedTarget) {
                 potentialTargets = [focusedTarget];
-                eventManager?.publish('ai_mbti_trait_triggered', { entity: self, trait: 'F' });
             }
         }
 
@@ -149,7 +145,7 @@ export class MeleeAI extends AIArchetype {
                 ? self.skills.map(id => SKILLS[id]).find(s => s && s.tags && s.tags.includes('charge'))
                 : null;
             if (mbti.includes('P')) {
-                eventManager?.publish('ai_mbti_trait_triggered', { entity: self, trait: 'P' });
+                // P 성향은 돌진 성향을 강화합니다
             }
 
             if (
@@ -173,9 +169,9 @@ export class MeleeAI extends AIArchetype {
                     (self.skillCooldowns[skillId] || 0) <= 0
                 ) {
                     if (mbti.includes('S')) {
-                        eventManager?.publish('ai_mbti_trait_triggered', { entity: self, trait: 'S' });
+                        // 감각형은 스킬 사용을 선호
                     } else if (mbti.includes('N') && self.hp / self.maxHp < 0.6) {
-                        eventManager?.publish('ai_mbti_trait_triggered', { entity: self, trait: 'N' });
+                        // 직관형은 체력이 낮을 때 스킬 사용
                     }
                     return { type: 'skill', target: nearestTarget, skillId };
                 }
@@ -231,7 +227,6 @@ export class HealerAI extends AIArchetype {
                 let targetCandidate = null;
                 if (mbti.includes('T')) {
                     targetCandidate = potential.reduce((low, cur) => cur.hp < low.hp ? cur : low, potential[0]);
-                    eventManager?.publish('ai_mbti_trait_triggered', { entity: self, trait: 'T' });
                 } else if (mbti.includes('F')) {
                     const allyTargets = new Set();
                     allies.forEach(a => {
@@ -240,7 +235,6 @@ export class HealerAI extends AIArchetype {
                     const focused = potential.find(t => allyTargets.has(t.id));
                     if (focused) {
                         targetCandidate = focused;
-                        eventManager?.publish('ai_mbti_trait_triggered', { entity: self, trait: 'F' });
                     }
                 }
                 const nearest = targetCandidate || potential.reduce(
@@ -305,18 +299,7 @@ export class HealerAI extends AIArchetype {
         );
 
         if (distance <= self.attackRange && hasLOS && skillReady) {
-            if (mbti.includes('S')) {
-                eventManager?.publish('ai_mbti_trait_triggered', { entity: self, trait: 'S' });
-            } else if (mbti.includes('N')) {
-                eventManager?.publish('ai_mbti_trait_triggered', { entity: self, trait: 'N' });
-            }
-
-            // E/I 성향을 실제 힐 순간에 표시
-            if (mbti.includes('E')) {
-                eventManager?.publish('ai_mbti_trait_triggered', { entity: self, trait: 'E' });
-            } else if (mbti.includes('I')) {
-                eventManager?.publish('ai_mbti_trait_triggered', { entity: self, trait: 'I' });
-            }
+            // MBTI 성향에 따른 힐 사용 타이밍 기록
 
             return { type: 'skill', target, skillId: healId };
         }
@@ -408,9 +391,6 @@ export class RangedAI extends AIArchetype {
         let potentialTargets = [...targetList];
         if (mbti.includes('T')) {
             potentialTargets.sort((a, b) => a.hp - b.hp);
-            if (potentialTargets.length > 0) {
-                eventManager?.publish('ai_mbti_trait_triggered', { entity: self, trait: 'T' });
-            }
         } else if (mbti.includes('F')) {
             const allyTargets = new Set();
             allies.forEach(ally => {
@@ -419,7 +399,6 @@ export class RangedAI extends AIArchetype {
             const focusedTarget = potentialTargets.find(t => allyTargets.has(t.id));
             if (focusedTarget) {
                 potentialTargets = [focusedTarget];
-                eventManager?.publish('ai_mbti_trait_triggered', { entity: self, trait: 'F' });
             }
         }
 
@@ -454,9 +433,9 @@ export class RangedAI extends AIArchetype {
                 if (minDistance <= self.attackRange && minDistance > self.attackRange * 0.5) {
                     // S/N 성향에 따른 스킬 사용 시점 표시
                     if (mbti.includes('S')) {
-                        eventManager?.publish('ai_mbti_trait_triggered', { entity: self, trait: 'S' });
+                        // 스킬 사용 선호
                     } else if (mbti.includes('N') && self.hp / self.maxHp < 0.6) {
-                        eventManager?.publish('ai_mbti_trait_triggered', { entity: self, trait: 'N' });
+                        // 위기 상황에서 스킬 사용
                     }
 
                     const skillId = self.skills && self.skills[0];
@@ -474,11 +453,10 @@ export class RangedAI extends AIArchetype {
                 if (minDistance <= self.attackRange * 0.5) {
                     // P 성향은 후퇴하지 않고 돌격
                     if (mbti.includes('P')) {
-                        eventManager?.publish('ai_mbti_trait_triggered', { entity: self, trait: 'P' });
                         return { type: 'move', target: nearestTarget };
                     }
                     if (mbti.includes('J')) {
-                        eventManager?.publish('ai_mbti_trait_triggered', { entity: self, trait: 'J' });
+                        // 계획적인 움직임 표시
                     }
                     const dx = nearestTarget.x - self.x;
                     const dy = nearestTarget.y - self.y;
@@ -824,9 +802,9 @@ export class BardAI extends AIArchetype {
                 if (distance <= self.attackRange) {
                     // E/I 성향을 실제 노래 시점에 표시
                     if (mbti.includes('E')) {
-                        eventManager?.publish('ai_mbti_trait_triggered', { entity: self, trait: 'E' });
+                        // 외향형은 크게 노래함
                     } else if (mbti.includes('I')) {
-                        eventManager?.publish('ai_mbti_trait_triggered', { entity: self, trait: 'I' });
+                        // 내향형은 조용히 노래한다
                     }
                     return { type: 'skill', target, skillId };
                 }
@@ -840,7 +818,6 @@ export class BardAI extends AIArchetype {
             let targetCandidate = null;
             if (mbti.includes('T')) {
                 targetCandidate = potential.reduce((low, cur) => cur.hp < low.hp ? cur : low, potential[0]);
-                eventManager?.publish('ai_mbti_trait_triggered', { entity: self, trait: 'T' });
             } else if (mbti.includes('F')) {
                 const allyTargets = new Set();
                 allies.forEach(a => {
@@ -849,7 +826,6 @@ export class BardAI extends AIArchetype {
                 const focused = potential.find(t => allyTargets.has(t.id));
                 if (focused) {
                     targetCandidate = focused;
-                    eventManager?.publish('ai_mbti_trait_triggered', { entity: self, trait: 'F' });
                 }
             }
             const nearest = targetCandidate || potential.reduce(
