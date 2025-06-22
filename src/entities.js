@@ -388,6 +388,7 @@ export class Projectile {
         this.width = config.width || 32;
         this.height = config.height || 32;
         this.damage = config.damage;
+        this.knockbackStrength = config.knockbackStrength || 0;
         this.caster = config.caster;
         // 밝게 그려야 하는 마법 투사체의 경우 blendMode를 'lighter'로 설정할 수 있다
         this.blendMode = config.blendMode || null;

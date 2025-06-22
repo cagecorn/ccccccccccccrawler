@@ -71,7 +71,11 @@ export class MetaAIManager {
                     const isRanged = weaponTags.includes('ranged') || weaponTags.includes('bow');
                     eventManager.publish('entity_attack', { attacker: entity, defender: action.target });
                     if (isRanged && context.projectileManager) {
-                        const projSkill = { projectile: 'arrow', damage: entity.attackPower };
+                        const projSkill = {
+                            projectile: 'arrow',
+                            damage: entity.attackPower,
+                            knockbackStrength: 32
+                        };
                         context.projectileManager.create(entity, action.target, projSkill);
                     }
                     const baseCd = 60;

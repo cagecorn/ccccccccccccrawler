@@ -125,7 +125,8 @@ export class Game {
                 name !== 'AuraManager' &&
                 name !== 'ItemAIManager' &&
                 name !== 'EffectManager' &&
-                name !== 'SkillManager'
+                name !== 'SkillManager' &&
+                name !== 'ProjectileManager'
         );
         for (const managerName of otherManagerNames) {
             this.managers[managerName] = new Managers[managerName](this.eventManager, assets, this.factory);
@@ -144,14 +145,6 @@ export class Game {
         this.vfxManager = this.managers.VFXManager;
         this.soundManager = this.managers.SoundManager;
         this.effectManager = this.managers.EffectManager;
-        this.projectileManager = this.managers.ProjectileManager;
-        this.projectileManager.vfxManager = this.vfxManager;
-        this.itemAIManager = new Managers.ItemAIManager(
-            this.eventManager,
-            this.projectileManager,
-            this.vfxManager
-        );
-        this.itemAIManager.setEffectManager(this.effectManager);
         this.auraManager = new Managers.AuraManager(this.effectManager, this.eventManager, this.vfxManager);
         this.microItemAIManager = new Managers.MicroItemAIManager();
         this.microEngine = new MicroEngine(this.eventManager);
@@ -172,6 +165,19 @@ export class Game {
         this.pathfindingManager = new PathfindingManager(this.mapManager);
         this.motionManager = new Managers.MotionManager(this.mapManager, this.pathfindingManager);
         this.knockbackEngine = new KnockbackEngine(this.motionManager, this.vfxManager);
+        this.projectileManager = new Managers.ProjectileManager(
+            this.eventManager,
+            assets,
+            this.vfxManager,
+            this.knockbackEngine
+        );
+        this.managers.ProjectileManager = this.projectileManager;
+        this.itemAIManager = new Managers.ItemAIManager(
+            this.eventManager,
+            this.projectileManager,
+            this.vfxManager
+        );
+        this.itemAIManager.setEffectManager(this.effectManager);
         this.movementManager = new MovementManager(this.mapManager);
         this.fogManager = new FogManager(this.mapManager.width, this.mapManager.height);
         this.particleDecoratorManager = new Managers.ParticleDecoratorManager();
