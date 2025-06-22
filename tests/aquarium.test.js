@@ -14,7 +14,7 @@ const assets = { monster:{} };
 describe('Aquarium', () => {
     test('Aquarium map uses a wide maze layout', () => {
         const m = new AquariumMapManager(1);
-        assert.ok(m.corridorWidth >= 8, 'corridor width should be wide');
+        assert.strictEqual(m.corridorWidth, 5);
         const wallCount = m.countTiles(m.tileTypes.WALL);
         assert.ok(wallCount > 0 && wallCount < m.width * m.height, 'maze should contain walls and floors');
     });

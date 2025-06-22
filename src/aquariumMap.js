@@ -6,8 +6,8 @@ export class AquariumMapManager extends MapManager {
     constructor(seed) {
         super(seed);
         this.name = 'aquarium';
-        // wider passages help observe pathfinding for mercenaries and monsters
-        this.corridorWidth = 8;
+        // narrower corridors make the aquarium feel more like a maze
+        this.corridorWidth = 5;
         // regenerate with the new corridor width
         this.map = this._generateMaze();
     }
@@ -15,5 +15,10 @@ export class AquariumMapManager extends MapManager {
     _generateMaze() {
         // use the base maze generation but with a larger corridor width
         return super._generateMaze();
+    }
+
+    // keep more dead ends so walls are prominent
+    _removeDeadEnds(map, chance) {
+        return super._removeDeadEnds(map, 0.05);
     }
 }
