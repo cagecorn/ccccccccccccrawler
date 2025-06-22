@@ -50,7 +50,6 @@
 | `parasiteManager.js` | 기생 아이템 획득과 효과 적용을 전담합니다. |
 | `petManager.js` | 펫 소환과 성장, 중복 합성을 관리합니다. |
 | `particleDecoratorManager.js` | 파티클 효과에 장식용 이미지를 추가하는 유틸리티 매니저. |
-| `possessionAIManager.js` | 유령이 몬스터를 찾아 빙의시키고 빙의 상태를 관리합니다. |
 | `pathfindingManager.js` | BFS 기반 길찾기 알고리즘을 제공합니다. |
 | `projectileManager.js` | 투사체 생성과 업데이트, 충돌 처리를 담당합니다. |
 | `saveLoadManager.js` | 게임 상태 저장과 불러오기를 처리합니다. |

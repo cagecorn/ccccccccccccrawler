@@ -37,9 +37,6 @@ import { MicroEngine } from './micro/MicroEngine.js';
 import { MicroItemAIManager } from './managers/microItemAIManager.js';
 import { MicroCombatManager } from './micro/MicroCombatManager.js';
 import { disarmWorkflow, armorBreakWorkflow } from './workflows.js';
-import { PossessionAIManager } from './managers/possessionAIManager.js';
-import { Ghost } from './entities.js';
-import { TankerGhostAI, RangedGhostAI, SupporterGhostAI, CCGhostAI } from './ai.js';
 import { EMBLEMS } from './data/emblems.js';
 import { TooltipEngine } from './ui/TooltipEngine.js';
 import { TargetingEngine } from './ai/TargetingEngine.js';
@@ -222,10 +219,6 @@ export class Game {
             this.mapManager
         );
         this.managers.QuantumManager = this.quantumManager;
-        this.possessionAIManager = null;
-        if (SETTINGS.ENABLE_POSSESSION_AI) {
-            this.possessionAIManager = new PossessionAIManager(this.eventManager);
-        }
         this.itemFactory.emblems = EMBLEMS;
 
         this.skillManager = new Managers.SkillManager(
@@ -240,21 +233,6 @@ export class Game {
         this.managers.SkillManager = this.skillManager;
 
         this.spawningEngine = new SpawningEngine(this.quantumManager, this.mapManager);
-
-        if (SETTINGS.ENABLE_POSSESSION_AI && this.possessionAIManager) {
-            const ghostAIs = {
-                tanker: new TankerGhostAI(),
-                ranged: new RangedGhostAI(),
-                supporter: new SupporterGhostAI(),
-                cc: new CCGhostAI(),
-            };
-            const ghostTypes = Object.keys(ghostAIs);
-            const numGhosts = Math.floor(Math.random() * 3) + 1;
-            for (let i = 0; i < numGhosts; i++) {
-                const randomType = ghostTypes[Math.floor(Math.random() * ghostTypes.length)];
-                this.possessionAIManager.addGhost(new Ghost(randomType, ghostAIs[randomType]));
-            }
-        }
         this.petManager = new Managers.PetManager(this.eventManager, this.factory, this.metaAIManager, this.auraManager, this.vfxManager);
         this.managers.PetManager = this.petManager;
         this.skillManager.setManagers(this.effectManager, this.factory, this.metaAIManager, this.monsterManager);
@@ -1190,9 +1168,6 @@ export class Game {
             enemies: metaAIManager.groups['dungeon_monsters']?.members || []
         };
         metaAIManager.update(context);
-        if (SETTINGS.ENABLE_POSSESSION_AI && this.possessionAIManager) {
-            this.possessionAIManager.update(context);
-        }
         this.itemAIManager.update(context);
         this.projectileManager.update(allEntities);
         this.vfxManager.update();

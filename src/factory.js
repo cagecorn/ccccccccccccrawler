@@ -243,9 +243,6 @@ export class ItemFactory {
         if (Math.random() < 0.5) this._applyAffix(item, PREFIXES, 'prefix');
         if (Math.random() < 0.5) this._applyAffix(item, SUFFIXES, 'suffix');
 
-        if (baseItem.possessionAI) {
-            item.possessionAI = baseItem.possessionAI;
-        }
 
         return item;
     }
