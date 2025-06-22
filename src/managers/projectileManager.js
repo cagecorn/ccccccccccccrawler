@@ -2,11 +2,12 @@ import { Projectile } from "../entities.js";
 import { findEntitiesInRadius } from '../utils/entityUtils.js';
 
 export class ProjectileManager {
-    constructor(eventManager, assets, vfxManager = null) {
+    constructor(eventManager, assets, vfxManager = null, knockbackEngine = null) {
         this.projectiles = [];
         this.eventManager = eventManager;
         this.assets = assets;
         this.vfxManager = vfxManager;
+        this.knockbackEngine = knockbackEngine;
         console.log("[ProjectileManager] Initialized");
     }
 
@@ -26,6 +27,7 @@ export class ProjectileManager {
             target: target,
             caster: caster,
             damage: skill.damage,
+            knockbackStrength: skill.knockbackStrength || skill.knockback || 0,
             image: this.assets[imageKey],
             width: isArrow ? 32 : 64,
             height: isArrow ? 32 : 64,
@@ -47,6 +49,7 @@ export class ProjectileManager {
             target,
             caster,
             damage: 0,
+            knockbackStrength: 0,
             image: item.image,
             width: item.width,
             height: item.height,
@@ -73,6 +76,14 @@ export class ProjectileManager {
                     defender: result.target,
                     damage: proj.damage,
                 });
+
+                if (this.knockbackEngine && proj.knockbackStrength > 0) {
+                    this.knockbackEngine.apply(proj.caster, result.target, proj.knockbackStrength);
+                    this.eventManager.publish('knockback_success', {
+                        attacker: proj.caster,
+                        projectile: proj
+                    });
+                }
 
                 const weapon = proj.caster.equipment.weapon;
                 if (weapon && weapon.weaponStats?.skills.includes('sonic_arrow')) {
