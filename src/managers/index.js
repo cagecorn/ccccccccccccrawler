@@ -25,7 +25,6 @@ import { MetaAIManager } from './metaAIManager.js';
 import { SynergyManager } from '../micro/SynergyManager.js';
 import { SpeechBubbleManager } from './speechBubbleManager.js';
 import { AuraManager } from './AuraManager.js';
-import { PossessionAIManager } from './possessionAIManager.js';
 import { QuantumManager } from './QuantumManager.js';
 // 파일 기반 로거는 Node 환경 전용이라 기본 묶음에서 제외한다
 // import { FileLogManager } from './fileLogManager.js';
@@ -53,7 +52,6 @@ export {
     PetManager,
     EffectIconManager,
     MetaAIManager,
-    PossessionAIManager,
     AuraManager,
     QuantumManager,
     SynergyManager,

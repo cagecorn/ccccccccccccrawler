@@ -29,7 +29,6 @@ class Entity {
         this.fallbackAI = null; // 무기가 없을 때 사용할 기본 전투 AI
         this.effects = []; // 적용중인 효과 목록 배열 추가
         this.unitType = 'generic'; // 기본 유닛 타입을 '일반'으로 설정
-        this.possessedBy = null; // 빙의 상태를 저장할 속성
         this.direction = 'right'; // 시선 방향
 
         // --- AI 상태 저장용 프로퍼티 ---
@@ -450,11 +449,3 @@ export class Projectile {
 
 }
 
-export class Ghost {
-    constructor(ghostType, ai) {
-        this.type = ghostType;
-        this.ai = ai;
-        this.host = null;
-        this.state = 'seeking'; // 'seeking', 'possessing', 'wandering'
-    }
-}
