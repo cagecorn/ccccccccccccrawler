@@ -10,16 +10,25 @@ import { EMBLEMS } from './data/emblems.js';
 import { PREFIXES, SUFFIXES } from './data/affixes.js';
 import { JOBS } from './data/jobs.js';
 import { SKILLS } from './data/skills.js';
-import { MeleeAI, RangedAI, HealerAI, WizardAI, SummonerAI, BardAI, PurifierAI, CompositeAI } from './ai.js';
+import { MeleeAI, RangedAI, WizardAI, SummonerAI } from './ai.js';
+import { SupportAI } from './ai/SupportAI.js';
+import { SupportEngine } from './systems/SupportEngine.js';
 import { MBTI_TYPES } from './data/mbti.js';
 import { PETS } from './data/pets.js';
 import { WeaponStatManager } from './micro/WeaponStatManager.js';
 import { SYNERGIES } from './data/synergies.js';
 
 export class CharacterFactory {
-    constructor(assets) {
+    constructor(assets, game = null) {
+        if (assets && assets.assets) {
+            // called with game instance as first argument
+            game = assets;
+            assets = game.assets;
+        }
         this.assets = assets;
+        this.game = game;
         this.itemFactory = new ItemFactory(assets);
+        this.supportEngine = game?.supportEngine || new SupportEngine();
     }
 
     create(type, config) {
@@ -94,7 +103,10 @@ export class CharacterFactory {
                 } else if (config.jobId === 'healer') {
                     merc.skills.push(SKILLS.heal.id);
                     merc.skills.push(SKILLS.purify.id);
-                    merc.roleAI = new CompositeAI(new PurifierAI(), new HealerAI());
+                    merc.roleAI = new SupportAI(this.supportEngine, {
+                        priorities: ['purify', 'heal'],
+                        skillIds: { heal: SKILLS.heal.id, purify: SKILLS.purify.id }
+                    });
                 } else if (config.jobId === 'wizard') {
                     const mageSkill = Math.random() < 0.5 ? SKILLS.fireball.id : SKILLS.iceball.id;
                     merc.skills.push(mageSkill);
@@ -112,7 +124,11 @@ export class CharacterFactory {
                         if (merc.stats) merc.stats.updateEquipmentStats();
                         if (typeof merc.updateAI === 'function') merc.updateAI();
                     }
-                    merc.roleAI = new BardAI();
+                    merc.roleAI = new SupportAI(this.supportEngine, {
+                        priorities: ['buff'],
+                        buffId: 'shield',
+                        skillIds: { buff: SKILLS.guardian_hymn.id }
+                    });
                 } else {
                     const skillId = Math.random() < 0.5 ? SKILLS.double_strike.id : SKILLS.charge_attack.id;
                     merc.skills.push(skillId);

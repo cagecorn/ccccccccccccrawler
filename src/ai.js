@@ -7,7 +7,7 @@ import { SKILLS } from './data/skills.js';
 // 시각 효과 로직과 분리한다.  실제 팝업 처리는 game.js가 담당한다.
 
 // --- AI 유형(Archetype)의 기반이 될 부모 클래스 ---
-class AIArchetype {
+export class AIArchetype {
     // action은 { type: 'move', target: {x, y} } 또는 { type: 'attack', target: entity } 같은 객체
     decideAction(self, context) {
         // 기본적으로는 아무것도 하지 않음 (자식 클래스에서 재정의)
