@@ -41,6 +41,7 @@ import { TankerGhostAI, RangedGhostAI, SupporterGhostAI, CCGhostAI } from './ai.
 import { EMBLEMS } from './data/emblems.js';
 import { TooltipEngine } from './ui/TooltipEngine.js';
 import { TargetingEngine } from './ai/TargetingEngine.js';
+import { VisionEngine } from './ai/VisionEngine.js';
 
 export class Game {
     constructor() {
@@ -108,6 +109,7 @@ export class Game {
         this.combatCalculator = new CombatCalculator(this.eventManager, this.tagManager);
         // Player begins in the Aquarium map for feature testing
         this.mapManager = new AquariumMapManager();
+        this.visionEngine = new VisionEngine(this.mapManager);
         this.saveLoadManager = new SaveLoadManager();
         this.turnManager = new TurnManager();
         this.narrativeManager = new NarrativeManager();
@@ -1168,6 +1170,7 @@ export class Game {
             knockbackEngine: this.knockbackEngine,
             supportEngine: this.supportEngine,
             targetingEngine: this.targetingEngine,
+            visionEngine: this.visionEngine,
             assets: this.loader.assets,
             metaAIManager,
             microItemAIManager,
