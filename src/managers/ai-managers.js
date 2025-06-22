@@ -41,6 +41,16 @@ export class MetaAIManager {
         }
         return this.groups[id];
     }
+
+    /**
+     * 그룹을 조회합니다.
+     * 존재하지 않으면 null을 반환합니다.
+     * @param {string} id
+     * @returns {AIGroup|null}
+     */
+    getGroup(id) {
+        return this.groups[id] || null;
+    }
     
     setGroupStrategy(id, strategy) {
         if (this.groups[id]) {
