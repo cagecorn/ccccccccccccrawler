@@ -104,6 +104,20 @@ export class SpawningEngine {
             this.equipmentManager.equip(monster, weapon, null);
         }
 
+        const armorChoices = ['leather_armor', 'plate_armor', 'metal_armor', 'wizard_robe'];
+        const armorId = armorChoices[Math.floor(Math.random() * armorChoices.length)];
+        const armor = this.factory.itemFactory.create(armorId, 0, 0, this.mapManager.tileSize);
+        if (armor) {
+            this.equipmentManager.equip(monster, armor, null);
+        }
+
+        if (Math.random() < 0.5) {
+            const shield = this.factory.itemFactory.create('shield_basic', 0, 0, this.mapManager.tileSize);
+            if (shield) {
+                this.equipmentManager.equip(monster, shield, null);
+            }
+        }
+
         const consumableId = rollOnTable(getMonsterLootTable('monster'));
         const consumable = this.factory.itemFactory.create(consumableId, 0, 0, this.mapManager.tileSize);
         if (consumable && consumable.tags.includes('consumable')) {

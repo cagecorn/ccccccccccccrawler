@@ -80,6 +80,11 @@ export class CharacterFactory {
                 player.skills.push(SKILLS.fireball.id);
                 player.skills.push(SKILLS.iceball.id);
                 player.skills.push(SKILLS.teleport.id);
+                const pArmor = this.itemFactory.create('leather_armor', 0, 0, tileSize);
+                if (pArmor) {
+                    player.equipment.armor = pArmor;
+                    if (player.stats) player.stats.updateEquipmentStats();
+                }
                 return player;
             case 'mercenary':
                 if (config.jobId && JOBS[config.jobId]) {
@@ -141,6 +146,12 @@ export class CharacterFactory {
                         if (merc.stats) merc.stats.updateEquipmentStats();
                         if (typeof merc.updateAI === 'function') merc.updateAI();
                     }
+                }
+
+                const mArmor = this.itemFactory.create('leather_armor', 0, 0, tileSize);
+                if (mArmor) {
+                    merc.equipment.armor = mArmor;
+                    if (merc.stats) merc.stats.updateEquipmentStats();
                 }
 
                 return merc;
