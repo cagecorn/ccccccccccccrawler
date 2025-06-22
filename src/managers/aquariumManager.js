@@ -99,6 +99,13 @@ export class AquariumManager {
                 if (weapon) {
                     this.equipmentManager.equip(monster, weapon, null);
 
+                    const armorOptions = ['leather_armor', 'plate_armor', 'metal_armor', 'wizard_robe'];
+                    const armorId = armorOptions[Math.floor(Math.random() * armorOptions.length)];
+                    const armor = this.itemFactory.create(armorId, 0, 0, 1);
+                    if (armor) {
+                        this.equipmentManager.equip(monster, armor, null);
+                    }
+
                     const tags = weapon.tags || [];
                     const isMelee = tags.includes('melee') && !tags.includes('ranged');
                     const excluded = tags.includes('spear') || tags.includes('scythe');
@@ -108,16 +115,16 @@ export class AquariumManager {
                         equipShield = true;
                     }
 
-                    if (isMelee && !excluded && equipShield) {
-                        const shield = this.itemFactory.create('shield_basic', 0, 0, 1);
-                        if (shield) {
-                            this.equipmentManager.equip(monster, shield, null);
-                            shieldSpawned = true;
+                        if (isMelee && !excluded && equipShield) {
+                            const shield = this.itemFactory.create('shield_basic', 0, 0, 1);
+                            if (shield) {
+                                this.equipmentManager.equip(monster, shield, null);
+                                shieldSpawned = true;
+                            }
                         }
                     }
                 }
             }
-        }
     }
 
     addTestingFeature(feature) {
@@ -149,6 +156,13 @@ export class AquariumManager {
                     const weapon = this.itemFactory.create(randomWeaponId, 0, 0, 1);
                     if (weapon) {
                         this.equipmentManager.equip(monster, weapon, null);
+
+                        const armorChoices = ['leather_armor', 'plate_armor', 'metal_armor', 'wizard_robe'];
+                        const armorId = armorChoices[Math.floor(Math.random() * armorChoices.length)];
+                        const armor = this.itemFactory.create(armorId, 0, 0, 1);
+                        if (armor) {
+                            this.equipmentManager.equip(monster, armor, null);
+                        }
 
                         // 근거리 무기(창, 낫 제외)를 들고 있을 때 확률적으로 방패 장착
                         const tags = weapon.tags || [];

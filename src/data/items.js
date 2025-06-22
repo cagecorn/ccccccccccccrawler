@@ -64,6 +64,30 @@ export const ITEMS = {
         toughness: 4,
     },
 
+    metal_armor: {
+        name: '금속 갑옷',
+        type: 'armor',
+        tags: ['armor', 'heavy_armor'],
+        imageKey: 'metal_armor',
+        stats: { maxHp: 8 },
+        tier: 'rare',
+        durability: 150,
+        weight: 12,
+        toughness: 8,
+    },
+
+    wizard_robe: {
+        name: '마법사 로브',
+        type: 'armor',
+        tags: ['armor', 'cloth_armor'],
+        imageKey: 'wizard_robe',
+        stats: { maxHp: 3, intelligence: 2 },
+        tier: 'normal',
+        durability: 50,
+        weight: 3,
+        toughness: 2,
+    },
+
     shield_basic: {
         name: '기본 방패',
         type: 'shield',

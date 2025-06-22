@@ -74,6 +74,8 @@ export class Game {
         this.loader.loadImage('arrow', 'assets/images/arrow.png');
         this.loader.loadImage('leather_armor', 'assets/images/leatherarmor.png');
         this.loader.loadImage('plate-armor', 'assets/images/plate-armor.png');
+        this.loader.loadImage('metal_armor', 'assets/images/metal.png');
+        this.loader.loadImage('wizard_robe', 'assets/images/wizard.png');
         this.loader.loadImage('violin-bow', 'assets/images/violin-bow.png');
         this.loader.loadImage('skeleton', 'assets/images/skeleton.png');
         this.loader.loadImage('pet-fox', 'assets/images/pet-fox.png');
@@ -380,7 +382,7 @@ export class Game {
         if(emblemConductor) this.itemManager.addItem(emblemConductor);
 
         // === 3. 몬스터 생성 ===
-        const baseMonsterCount = this.mapManager.name === 'aquarium' ? 10 : 40;
+        const baseMonsterCount = this.mapManager.name === 'aquarium' ? 30 : 40;
         this.spawningEngine.spawnInitial(baseMonsterCount);
 
         // === 4. 용병 고용 로직 ===
