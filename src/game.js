@@ -24,6 +24,7 @@ import { TurnManager } from './managers/turnManager.js';
 import { KnockbackEngine } from './systems/KnockbackEngine.js';
 import { SupportEngine } from './systems/SupportEngine.js';
 import { InventoryEngine } from './systems/InventoryEngine.js';
+import { SpawningEngine } from './systems/SpawningEngine.js';
 import { SKILLS } from './data/skills.js';
 import { EFFECTS } from './data/effects.js';
 import { Item } from './entities.js';
@@ -37,7 +38,6 @@ import { PossessionAIManager } from './managers/possessionAIManager.js';
 import { Ghost } from './entities.js';
 import { TankerGhostAI, RangedGhostAI, SupporterGhostAI, CCGhostAI } from './ai.js';
 import { EMBLEMS } from './data/emblems.js';
-import { adjustMonsterStatsForAquarium } from './utils/aquariumUtils.js';
 import { TooltipEngine } from './ui/TooltipEngine.js';
 import { TargetingEngine } from './ai/TargetingEngine.js';
 
@@ -214,6 +214,16 @@ export class Game {
         );
         this.managers.SkillManager = this.skillManager;
 
+        this.spawningEngine = new SpawningEngine(
+            this.monsterManager,
+            this.factory,
+            this.mapManager,
+            this.equipmentManager,
+            this.parasiteManager,
+            this.equipmentRenderManager
+        );
+        this.spawningEngine.monsterManager.metaAI = this.metaAIManager;
+
         const ghostAIs = {
             tanker: new TankerGhostAI(),
             ranged: new RangedGhostAI(),
@@ -357,72 +367,8 @@ export class Game {
         if(emblemConductor) this.itemManager.addItem(emblemConductor);
 
         // === 3. 몬스터 생성 ===
-        const monsters = [];
         const baseMonsterCount = this.mapManager.name === 'aquarium' ? 10 : 40;
-        for (let i = 0; i < baseMonsterCount; i++) {
-            const pos = this.mapManager.getRandomFloorPosition();
-            if (pos) {
-                let stats = {};
-                if (this.mapManager.name === 'aquarium') {
-                    stats = adjustMonsterStatsForAquarium(stats);
-                }
-                const monster = this.factory.create('monster', {
-                    x: pos.x,
-                    y: pos.y,
-                    tileSize: this.mapManager.tileSize,
-                    groupId: this.monsterGroup.id,
-                    image: assets.monster,
-                    baseStats: stats
-                });
-                monster.equipmentRenderManager = this.equipmentRenderManager;
-                // 몬스터 초기 장비 및 소지품 설정
-                monster.consumables = [];
-                monster.consumableCapacity = 4;
-                const itemCount = Math.floor(Math.random() * 3) + 1;
-                for (let j = 0; j < itemCount; j++) {
-                    const id = rollOnTable(getMonsterLootTable());
-                    const item = this.itemFactory.create(
-                        id,
-                        monster.x,
-                        monster.y,
-                        this.mapManager.tileSize
-                    );
-                    if (!item) continue;
-                    if (
-                        item.tags.includes('weapon') ||
-                        item.type === 'weapon' ||
-                        item.tags.includes('armor') ||
-                        item.type === 'armor'
-                    ) {
-                        this.equipmentManager.equip(monster, item, null);
-                    } else {
-                        monster.addConsumable(item);
-                    }
-                }
-                if (Math.random() < 0.15) {
-                    const pid = Math.random() < 0.5 ? 'parasite_leech' : 'parasite_worm';
-                    const pItem = this.itemFactory.create(
-                        pid,
-                        monster.x,
-                        monster.y,
-                        this.mapManager.tileSize
-                    );
-                    if (pItem) this.parasiteManager.equip(monster, pItem);
-                }
-                if (Math.random() < 0.3) {
-                    const bow = this.itemFactory.create(
-                        'long_bow',
-                        monster.x,
-                        monster.y,
-                        this.mapManager.tileSize
-                    );
-                    if (bow) this.equipmentManager.equip(monster, bow, null);
-                }
-                monsters.push(monster);
-            }
-        }
-        this.monsterManager.monsters.push(...monsters);
-        this.monsterManager.monsters.forEach(m => this.monsterGroup.addMember(m));
+        this.spawningEngine.spawnInitial(baseMonsterCount);
 
         // === 4. 용병 고용 로직 ===
         const hireBtn = document.getElementById('hire-mercenary');
