@@ -6,8 +6,9 @@ import { SYNERGIES } from '../data/synergies.js';
 import { ARTIFACTS } from '../data/artifacts.js';
 
 export class UIManager {
-    constructor(tooltipEngine = null) {
+    constructor(tooltipEngine = null, inventoryEngine = null) {
         this.tooltipEngine = tooltipEngine;
+        this.inventoryEngine = inventoryEngine;
         this.levelElement = document.getElementById('ui-player-level');
         this.statPointsElement = document.getElementById('ui-player-statPoints');
         this.movementSpeedElement = document.getElementById('ui-player-movementSpeed');
@@ -90,6 +91,13 @@ export class UIManager {
         this._statUpCallback = this.callbacks.onStatUp;
         this.onEquipItem = this.callbacks.onEquipItem;
         this.onConsumableUse = this.callbacks.onConsumableUse;
+        if (this.callbacks.eventManager) {
+            this.callbacks.eventManager.subscribe('inventory_updated', (data) => {
+                if (data.entityId === this.gameState?.player?.id) {
+                    this.renderInventory(this.gameState.player);
+                }
+            });
+        }
         if (this.statUpButtonsContainer) {
             this.statUpButtonsContainer.addEventListener('click', (event) => {
                 if (event.target.classList.contains('stat-up-btn') ||
@@ -485,7 +493,7 @@ export class UIManager {
     showPanel(panelId) {
         if (panelId === 'inventory' && this.inventoryPanel) {
             this.inventoryPanel.classList.remove('hidden');
-            if (this.gameState) this.renderInventory(this.gameState);
+            if (this.gameState) this.renderInventory(this.gameState.player);
         } else if (panelId === 'mercenary-panel' && this.mercenaryPanel) {
             this.mercenaryPanel.classList.remove('hidden');
             if (this.mercenaryManager) this.renderMercenaryList();
@@ -505,8 +513,7 @@ export class UIManager {
         if (this.gameState) this.gameState.isPaused = false;
     }
 
-    renderInventory(gameState) {
-        const player = gameState.player;
+    renderInventory(player) {
         this.equippedItemsContainer.innerHTML = '';
         for (const slot in player.equipment) {
             const item = player.equipment[slot];
@@ -525,7 +532,8 @@ export class UIManager {
         }
 
         this.inventoryListContainer.innerHTML = '';
-        gameState.inventory.forEach((item, index) => {
+        const items = this.inventoryEngine?.getInventory(player.id) || [];
+        items.forEach((item, index) => {
             const slotDiv = document.createElement('div');
             slotDiv.className = 'inventory-item-slot';
             if (item.image) {
@@ -665,7 +673,8 @@ export class UIManager {
     }
 
     useItem(itemIndex, gameState) {
-        const item = gameState.inventory[itemIndex];
+        const items = this.inventoryEngine?.getInventory(gameState.player.id) || [];
+        const item = items[itemIndex];
         if (!item) return;
 
         if (item.tags.includes('weapon') || item.tags.includes('armor') ||
@@ -684,7 +693,7 @@ export class UIManager {
             if (item.quantity > 1) {
                 item.quantity -= 1;
             } else {
-                gameState.inventory.splice(itemIndex, 1);
+                this.inventoryEngine?.removeItem(gameState.player.id, itemIndex);
             }
             this.updateUI(gameState);
         }

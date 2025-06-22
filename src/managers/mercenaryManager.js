@@ -1,10 +1,11 @@
 import { TRAITS } from '../data/traits.js';
 
 export class MercenaryManager {
-    constructor(eventManager = null, assets = null, factory = null) {
+    constructor(eventManager = null, assets = null, factory = null, inventoryEngine = null) {
         this.eventManager = eventManager;
         this.assets = assets;
         this.factory = factory;
+        this.inventoryEngine = inventoryEngine;
         this.mercenaries = [];
         this.equipmentRenderManager = null;
         this.traitManager = null;
@@ -35,6 +36,9 @@ export class MercenaryManager {
             image: this.assets[imageKey],
         });
         if (merc) {
+            if (this.inventoryEngine) {
+                this.inventoryEngine.createInventory(merc.id, 16);
+            }
             if (this.equipmentRenderManager) {
                 merc.equipmentRenderManager = this.equipmentRenderManager;
             }
