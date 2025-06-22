@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>타일 크롤러</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="top-menu-bar" class="ui-frame">
+        <button class="menu-btn" data-panel-id="inventory">인벤토리</button>
+        <button class="menu-btn" data-panel-id="mercenary-panel">용병 부대</button>
+        <button class="menu-btn" data-panel-id="character-sheet-panel">플레이어 정보</button>
+    </div>
+    <div id="canvas-container">
+        <canvas id="map-base-canvas" class="game-layer"></canvas>
+        <canvas id="map-decor-canvas" class="game-layer"></canvas>
+        <canvas id="ground-fx-canvas" class="game-layer"></canvas>
+        <canvas id="entity-canvas" class="game-layer"></canvas>
+        <canvas id="vfx-canvas" class="game-layer"></canvas>
+        <canvas id="weather-canvas" class="game-layer"></canvas>
+    </div>
+    <canvas id="minimap-canvas" class="ui-frame"></canvas>
+
+    <div id="ui-panel" class="ui-frame">
+        <h2>플레이어 상태</h2>
+        <div class="stats-content-box">
+            <div id="player-stats-container">
+                <div class="stat-line">
+                    <span>✨ 레벨:</span>
+                    <span id="ui-player-level">1</span>
+                </div>
+                <div class="stat-line">
+                    <span>⭐ 스탯포인트:</span>
+                    <span id="ui-player-statPoints">0</span>
+                </div>
+                <div class="stat-line">
+                    <span>💪 힘:</span>
+                    <span id="ui-player-strength">0</span>
+                    <button id="btn-plus-strength" class="stat-plus" style="display:none">+</button>
+                </div>
+                <div class="stat-line">
+                    <span>🏃 민첩:</span>
+                    <span id="ui-player-agility">0</span>
+                    <button id="btn-plus-agility" class="stat-plus" style="display:none">+</button>
+                </div>
+                <div class="stat-line">
+                    <span>🛡 체력:</span>
+                    <span id="ui-player-endurance">0</span>
+                    <button id="btn-plus-endurance" class="stat-plus" style="display:none">+</button>
+                </div>
+                <div class="stat-line">
+                    <span>🔮 집중:</span>
+                    <span id="ui-player-focus">0</span>
+                    <button id="btn-plus-focus" class="stat-plus" style="display:none">+</button>
+                </div>
+                <div class="stat-line">
+                    <span>📖 지능:</span>
+                    <span id="ui-player-intelligence">0</span>
+                    <button id="btn-plus-intelligence" class="stat-plus" style="display:none">+</button>
+                </div>
+                <div class="stat-line">
+                    <span>👣 이동:</span>
+                    <span id="ui-player-movement">0</span>
+                    <button id="btn-plus-movement" class="stat-plus" style="display:none">+</button>
+                </div>
+                <div class="stat-line">
+                    <span>🚶 이동 속도:</span>
+                    <span id="ui-player-movementSpeed">0</span>
+                </div>
+                <div class="stat-line">
+                    <span>💰 골드:</span>
+                    <span id="ui-player-gold">0</span>
+                </div>
+                <div class="stat-line">
+                    <span>❤️ HP:</span>
+                    <span id="ui-player-hp">20</span>
+                    <span>/</span>
+                    <span id="ui-player-maxHp">20</span>
+                </div>
+                <div class="hp-bar-container">
+                    <div id="ui-hp-bar-fill" class="hp-bar-fill"></div>
+                </div>
+                <div class="stat-line">
+                    <span>💧 MP:</span>
+                    <span id="ui-player-mp">0</span> / <span id="ui-player-maxMp">0</span>
+                </div>
+                <div class="mp-bar-container">
+                    <div id="ui-mp-bar-fill" class="mp-bar-fill"></div>
+                </div>
+                <div class="stat-line">
+                    <span>⚔️ 공격력:</span>
+                    <span id="ui-player-attackPower">2</span>
+                </div>
+            </div>
+            <div class="exp-bar-container">
+                <div id="ui-exp-bar-fill" class="exp-bar-fill"></div>
+                <div class="exp-bar-text" id="ui-exp-text">0 / 20</div>
+            </div>
+            <div id="inventory-section">
+                <h3>인벤토리</h3>
+                <div id="inventory-slots">
+                </div>
+            </div>
+            <div id="mercenary-controls">
+                <button id="hire-mercenary">전사 용병 고용 (50골드)</button>
+                <button id="hire-archer">궁수 용병 고용 (50골드)</button>
+                <button id="hire-healer">힐러 용병 고용 (50골드)</button>
+                <button id="hire-wizard">마법사 용병 고용 (50골드)</button>
+                <button id="hire-bard">음유시인 고용 (50골드)</button>
+                <button id="hire-summoner">소환사 용병 고용 (50골드)</button>
+                <button id="save-game-btn">게임 저장</button>
+            </div>
+        </div>
+    </div>
+    <div id="combat-log-panel" class="ui-frame">
+        <div id="combat-log-content"></div>
+    </div>
+
+    <div id="system-log-panel" class="ui-frame">
+        <div class="log-title">-- SYSTEM LOG --</div>
+        <div id="system-log-content"></div>
+    </div>
+    <div id="mercenary-detail-panel" class="modal-panel ui-frame hidden">
+        <button id="close-merc-detail-btn" class="close-btn">X</button>
+        <h2 id="merc-detail-name">용병 이름</h2>
+        <div class="stats-content-box">
+            <div id="merc-stats-container">
+            </div>
+        </div>
+        <div id="merc-equipment-section">
+            <h3>장비</h3>
+            <div id="merc-equipment" class="equipment-slots">
+                <div class="equip-slot" data-slot="main_hand"></div>
+                <div class="equip-slot" data-slot="off_hand"></div>
+                <div class="equip-slot" data-slot="armor"></div>
+                <div class="equip-slot" data-slot="helmet"></div>
+                <div class="equip-slot" data-slot="gloves"></div>
+                <div class="equip-slot" data-slot="boots"></div>
+                <div class="equip-slot" data-slot="accessory1"></div>
+                <div class="equip-slot" data-slot="accessory2"></div>
+            </div>
+        </div>
+        <div id="merc-inventory-section">
+            <h3>인벤토리</h3>
+            <div id="merc-inventory"></div>
+        </div>
+        <div id="merc-skills-section">
+            <h3>스킬</h3>
+            <div id="merc-skills" class="skill-list"></div>
+        </div>
+    </div>
+
+    <div id="equipment-target-panel" class="modal-panel ui-frame hidden">
+        <button id="close-equip-target-btn" class="close-btn">X</button>
+        <h2>누구에게 장착하시겠습니까?</h2>
+        <div id="equipment-target-list">
+        </div>
+    </div>
+
+    <div id="inventory-panel" class="modal-panel wide ui-frame hidden">
+        <button class="close-btn" data-panel-id="inventory">X</button>
+        <h2>🎒 인벤토리</h2>
+        <div class="inventory-container">
+            <div class="inventory-left">
+                <h3>✨ 장착 중</h3>
+                <div id="equipped-items">
+                    <div class="equip-slot" data-slot="main_hand">주무기: <span></span></div>
+                    <div class="equip-slot" data-slot="off_hand">보조장비: <span></span></div>
+                    <div class="equip-slot" data-slot="armor">갑옷: <span></span></div>
+                    <div class="equip-slot" data-slot="helmet">투구: <span></span></div>
+                    <div class="equip-slot" data-slot="gloves">장갑: <span></span></div>
+                    <div class="equip-slot" data-slot="boots">신발: <span></span></div>
+                    <div class="equip-slot" data-slot="accessory1">장신구1: <span></span></div>
+                    <div class="equip-slot" data-slot="accessory2">장신구2: <span></span></div>
+                </div>
+            </div>
+            <div class="inventory-right">
+                <h3>📦 소지품</h3>
+                <div id="inventory-filters">
+                    <button class="inv-filter-btn active" data-filter="all">모두</button>
+                    <button class="inv-filter-btn" data-filter="weapon">무기</button>
+                    <button class="inv-filter-btn" data-filter="armor">방어구</button>
+                    <button class="inv-filter-btn" data-filter="consumable">소모품</button>
+                </div>
+                <div id="inventory-list">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="mercenary-panel" class="modal-panel wide ui-frame hidden">
+        <button class="close-btn" data-panel-id="mercenary-panel">X</button>
+        <h2>🗡️ 용병 부대</h2>
+        <div id="mercenary-list"></div>
+    </div>
+
+    <!-- 캐릭터 스탯을 표시하는 패널 -->
+    <div id="character-sheet-panel" class="modal-panel ui-frame hidden">
+        <button class="close-btn" data-panel-id="character-sheet-panel">X</button>
+        <h2 id="sheet-character-name">캐릭터</h2>
+        <div class="stats-content-box">
+            <div id="sheet-equipment" class="equipment-slots">
+                <div class="equip-slot" data-slot="main_hand"><span>주무기</span></div>
+                <div class="equip-slot" data-slot="off_hand"><span>보조장비</span></div>
+                <div class="equip-slot" data-slot="armor"><span>갑옷</span></div>
+                <div class="equip-slot" data-slot="helmet"><span>투구</span></div>
+                <div class="equip-slot" data-slot="gloves"><span>장갑</span></div>
+                <div class="equip-slot" data-slot="boots"><span>신발</span></div>
+                <div class="equip-slot" data-slot="accessory1"><span>장신구1</span></div>
+                <div class="equip-slot" data-slot="accessory2"><span>장신구2</span></div>
+            </div>
+            <div id="sheet-inventory"></div>
+            <div class="stat-tabs">
+                <button class="stat-tab-btn active" data-tab="1">기본 스탯</button>
+                <button class="stat-tab-btn" data-tab="2">무기 숙련도</button>
+            </div>
+            <div id="stat-page-1" class="stat-page active"></div>
+            <div id="stat-page-2" class="stat-page hidden"></div>
+        </div>
+    </div>
+
+
+
+    <div id="skill-bar" class="ui-frame">
+        <div class="skill-slot" data-slot-index="0"><span>1</span></div>
+        <div class="skill-slot" data-slot-index="1"><span>2</span></div>
+        <div class="skill-slot" data-slot-index="2"><span>3</span></div>
+    </div>
+
+    <div id="tooltip" class="tooltip ui-frame hidden"></div>
+
+    <script type="module" src="main.js"></script>
+</body>
+</html>

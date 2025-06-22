@@ -1,0 +1,10 @@
+{
+  "name": "tile_crawler",
+  "version": "0.1.0",
+  "description": "Browser-based dungeon crawler",
+  "type": "module",
+  "scripts": {
+    "test": "node run-tests.mjs"
+  },
+  "license": "MIT"
+}

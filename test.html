@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>Game Tests</title>
+    <style>
+        body { background-color: #111; color: #eee; font-family: monospace; }
+        .log { margin-bottom: 5px; }
+        .pass { color: #28a745; }
+        .fail { color: #dc3545; }
+    </style>
+</head>
+<body>
+    <h1>게임 테스트 결과</h1>
+    <p>결과는 브라우저 개발자 도구 콘솔(F12)을 확인하세요.</p>
+
+    <script type="module" src="./tests/statManager.test.js"></script>
+    <script type="module" src="./tests/combatCalculator.test.js"></script>
+    <script type="module" src="./tests/random.test.js"></script>
+    <script type="module" src="./tests/pathfindingManager.test.js"></script>
+    <script type="module" src="./tests/movementManager.test.js"></script>
+    <script type="module" src="./tests/turnManager.test.js"></script>
+    <script type="module" src="./tests/effectManager.test.js"></script>
+    <script type="module" src="./tests/ai.test.js"></script>
+
+    <script type="module" src="./tests/eventManager.integration.test.js"></script>
+    <script type="module" src="./tests/mapManager.test.js"></script>
+    <script type="module" src="./tests/workflows.test.js"></script>
+    <script type="module" src="./tests/projectile.test.js"></script>
+    </body>
+</html>

@@ -1,0 +1,414 @@
+/* style.css */
+
+body, html {
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background-color: #000;
+}
+
+#canvas-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+/* --- Z-INDEX 계층 구조 정리 --- */
+/* 게임 월드 레이어 (10-99) */
+.game-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    image-rendering: pixelated;
+    image-rendering: crisp-edges;
+}
+#map-base-canvas    { z-index: 10; }
+#map-decor-canvas   { z-index: 20; }
+#ground-fx-canvas   { z-index: 30; }
+#entity-canvas      { z-index: 40; }
+#vfx-canvas         { z-index: 50; }
+#weather-canvas     { z-index: 60; }
+
+/* 고정 HUD UI (100-199) */
+#ui-panel, #combat-log-panel, #system-log-panel, #minimap-canvas, #skill-bar {
+    position: fixed;
+    z-index: 100;
+}
+#top-menu-bar {
+    position: fixed;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 110; /* HUD보다 위에 표시 */
+    padding: 5px 10px;
+}
+
+
+/* 모달 패널 (200-299) */
+.modal-panel {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 200;
+}
+.modal-panel.hidden {
+    display: none;
+}
+
+/* 툴팁 (최상위) */
+.tooltip {
+    position: fixed;
+    z-index: 300;
+    color: #fff;
+    padding: 6px 8px;
+    border-radius: 4px;
+    pointer-events: none;
+    font-size: 12px;
+    max-width: 200px;
+}
+
+
+/* 공통 UI 프레임 스타일 */
+.ui-frame {
+    border: 20px solid transparent;
+    border-image-source: url('assets/ui-border.png');
+    border-image-slice: 65 fill;
+    border-image-repeat: repeat;
+    background-image: url('assets/ui-bg.png');
+    background-color: #3a2d1d;
+    background-clip: padding-box;
+    box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    font-family: sans-serif;
+    font-weight: bold;
+    color: #4a3b2a;
+}
+
+#ui-panel {
+    top: 20px;
+    left: 20px;
+    width: 250px;
+    padding: 10px;
+}
+
+.stat-line {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 4px;
+    margin-bottom: 5px;
+}
+
+.hp-bar-container {
+    width: 100%;
+    height: 15px;
+    background-color: #888;
+    border: 1px solid #444;
+    border-radius: 3px;
+    margin-top: 5px;
+}
+
+.hp-bar-fill {
+    width: 100%;
+    height: 100%;
+    background-color: #d14a4a;
+    border-radius: 2px;
+    transition: width 0.2s ease-in-out;
+}
+
+.exp-bar-container {
+    width: 100%;
+    height: 15px;
+    background-color: #333;
+    border: 1px solid #777;
+    border-radius: 3px;
+    margin-top: 10px;
+    position: relative;
+}
+
+.exp-bar-fill {
+    width: 0%;
+    height: 100%;
+    background-color: #3a7bd5;
+    border-radius: 2px;
+    transition: width 0.5s ease-in-out;
+}
+
+.exp-bar-text {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    color: white;
+    font-size: 10px;
+    text-align: center;
+    line-height: 15px;
+    text-shadow: 1px 1px 1px black;
+}
+
+.stat-plus {
+    margin-left: 4px;
+    cursor: pointer;
+}
+
+#inventory-section {
+    margin-top: 15px;
+    padding-top: 10px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+#inventory-section h3 {
+    margin: 0 0 5px 0;
+    font-size: 14px;
+}
+
+#inventory-slots {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(48px, 1fr));
+    gap: 5px;
+    min-height: 48px;
+    background-color: rgba(0, 0, 0, 0.3);
+    padding: 5px;
+    border-radius: 3px;
+}
+
+.inventory-slot {
+    width: 48px;
+    height: 48px;
+    border: 1px solid #777;
+    background-color: #333;
+}
+
+.inventory-slot img {
+    width: 100%;
+    height: 100%;
+}
+
+#combat-log-panel {
+    bottom: 20px;
+    left: 20px;
+    width: 400px;
+    height: 150px;
+    font-size: 12px;
+    padding: 10px;
+    overflow-y: auto;
+}
+
+#system-log-panel {
+    bottom: 20px;
+    right: 20px;
+    width: 400px;
+    height: 150px;
+    color: #a2d2ff;
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 11px;
+    padding: 10px;
+    overflow-y: auto;
+    opacity: 0.7;
+}
+
+.log-title {
+    font-weight: bold;
+    color: #ffc107;
+    border-bottom: 1px solid #444;
+    padding-bottom: 5px;
+    margin-bottom: 5px;
+}
+
+.close-btn {
+    position: absolute;
+    top: -15px;
+    right: -15px;
+    width: 30px;
+    height: 30px;
+    background: #8c2a2a;
+    color: white;
+    border: 2px solid white;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: bold;
+}
+
+#minimap-canvas {
+    top: 20px;
+    right: 20px;
+    width: 200px;
+    height: 150px;
+    background-color: black;
+}
+
+.modal-panel.wide {
+    width: 60vw;
+    max-width: 800px;
+}
+
+.inventory-container {
+    display: flex;
+    gap: 20px;
+}
+
+.inventory-left {
+    flex-basis: 250px;
+    flex-shrink: 0;
+}
+
+.inventory-right {
+    flex-grow: 1;
+}
+
+#equipped-items {
+    display: grid;
+    grid-template-columns: repeat(2, 48px);
+    gap: 5px;
+    padding: 5px;
+}
+
+.equip-slot {
+    width: 48px;
+    height: 48px;
+    border: 1px solid #777;
+    background-color: #333;
+    margin-bottom: 5px;
+    cursor: pointer;
+    position: relative;
+}
+.equip-slot:hover {
+    background-color: rgba(0,0,0,0.4);
+}
+.equip-slot img {
+    width: 100%;
+    height: 100%;
+}
+
+#inventory-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(48px, 1fr));
+    gap: 8px;
+    padding: 8px;
+    background-color: rgba(0,0,0,0.3);
+    border-radius: 4px;
+    min-height: 100px;
+}
+
+.inventory-item-slot {
+    width: 48px;
+    height: 48px;
+    border: 1px solid #777;
+    background-color: #333;
+    cursor: pointer;
+    position: relative;
+}
+
+.inventory-item-slot:hover {
+    border-color: white;
+}
+
+.inventory-item-slot img {
+    width: 100%;
+    height: 100%;
+}
+
+.item-qty {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    background: rgba(0,0,0,0.6);
+    color: #fff;
+    font-size: 12px;
+    padding: 0 2px;
+    border-radius: 2px;
+}
+
+.hidden { display: none; }
+
+.mp-bar-container { width: 100%; height: 10px; background-color: #333; border-radius: 3px; margin-top: 2px; }
+.mp-bar-fill { width: 100%; height: 100%; background-color: #3a7bd5; border-radius: 2px; }
+
+#skill-bar {
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 8px;
+    padding: 5px;
+}
+.skill-slot { width: 48px; height: 48px; border: 2px solid #888; background-color: #111; position: relative; }
+.skill-slot img { width: 100%; height: 100%; }
+.skill-slot > span { position: absolute; top: 2px; left: 4px; color: white; font-size: 10px; text-shadow: 1px 1px 2px black; }
+.skill-cooldown { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; color: white; font-size: 22px; font-weight: bold; }
+
+.sheet-container { display: flex; gap: 15px; }
+.sheet-left { flex-basis: 300px; flex-shrink: 0; }
+.sheet-right { flex-grow: 1; }
+
+#sheet-equipment .equip-slot {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 8px; margin-bottom: 5px; background-color: rgba(0,0,0,0.1);
+    width: auto; height: auto;
+}
+#sheet-inventory {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(48px, 1fr));
+    gap: 5px; padding: 5px; background-color: rgba(0,0,0,0.2); min-height: 200px;
+}
+.stat-tabs { display: flex; margin-bottom: 10px; }
+.stat-tab-btn { flex-grow: 1; padding: 8px; border: 1px solid #555; background: #888; cursor: pointer; }
+.stat-tab-btn.active { background: #eee; color: #333; }
+.stat-page.hidden { display: none; }
+
+#mercenary-list {
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.merc-entry {
+    padding: 6px;
+    border-bottom: 1px solid #555;
+    cursor: pointer;
+}
+
+.merc-entry:hover {
+    background-color: rgba(255,255,255,0.1);
+}
+
+#merc-inventory {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(48px, 1fr));
+    gap: 5px;
+    padding: 5px;
+}
+
+#merc-equipment {
+    display: grid;
+    grid-template-columns: repeat(2, 48px);
+    gap: 5px;
+    padding: 5px;
+}
+
+#merc-skills {
+    display: flex;
+    gap: 5px;
+    padding: 5px 0;
+}
+
+.proficiency-list { display: flex; flex-direction: column; gap: 8px; }
+.proficiency-line { display: grid; grid-template-columns: 80px 50px 1fr; align-items: center; font-size: 12px; }
+.prof-name { font-weight: bold; }
+.prof-exp-bar-container { position: relative; width: 100%; height: 14px; background-color: #555; border-radius: 3px; }
+.prof-exp-bar-fill { height: 100%; background-color: #a2d2ff; border-radius: 3px; }
+.prof-exp-text { position: absolute; width: 100%; text-align: center; color: black; font-size: 10px; line-height: 14px; }
+
+.menu-btn {
+    margin-right: 5px;
+    color: #fff;
+    background: #333;
+    border: 1px solid #777;
+    padding: 4px 8px;
+    cursor: pointer;
+}
+.menu-btn:last-child {
+    margin-right: 0;
+}
