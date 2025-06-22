@@ -617,9 +617,13 @@ export class Game {
 
         // 피해량 계산 완료 이벤트를 받아 실제 피해 적용
         eventManager.subscribe('damage_calculated', (data) => {
-            data.defender.takeDamage(data.damage);
+            if (typeof data.defender?.takeDamage === 'function') {
+                data.defender.takeDamage(data.damage);
+            } else {
+                console.warn('[Game] defender missing takeDamage()', data.defender);
+            }
             eventManager.publish('entity_damaged', { attacker: data.attacker, defender: data.defender, damage: data.damage });
-            if (data.defender.hp <= 0) {
+            if (data.defender?.hp <= 0) {
                 eventManager.publish('entity_death', { attacker: data.attacker, victim: data.defender });
             }
         });
