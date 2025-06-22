@@ -6,7 +6,8 @@ import { SYNERGIES } from '../data/synergies.js';
 import { ARTIFACTS } from '../data/artifacts.js';
 
 export class UIManager {
-    constructor() {
+    constructor(tooltipEngine = null) {
+        this.tooltipEngine = tooltipEngine;
         this.levelElement = document.getElementById('ui-player-level');
         this.statPointsElement = document.getElementById('ui-player-statPoints');
         this.movementSpeedElement = document.getElementById('ui-player-movementSpeed');
@@ -40,7 +41,6 @@ export class UIManager {
         this.inventoryPanel = document.getElementById('inventory-panel');
         this.equippedItemsContainer = document.getElementById('equipped-items');
         this.inventoryListContainer = document.getElementById('inventory-list');
-        this.tooltip = document.getElementById('tooltip');
         this.characterSheetPanel = document.getElementById('character-sheet-panel');
         this.sheetCharacterName = document.getElementById('sheet-character-name');
         this.sheetEquipment = document.getElementById('sheet-equipment');
@@ -874,17 +874,12 @@ export class UIManager {
     }
 
     _attachTooltip(element, html) {
-        if (!this.tooltip) return;
-        element.onmouseenter = (e) => {
-            this.tooltip.innerHTML = html;
-            this.tooltip.style.left = `${e.pageX + 10}px`;
-            this.tooltip.style.top = `${e.pageY + 10}px`;
-            this.tooltip.classList.remove('hidden');
-        };
-        element.onmouseleave = () => this.tooltip.classList.add('hidden');
-        element.onmousemove = (e) => {
-             this.tooltip.style.left = `${e.pageX + 10}px`;
-             this.tooltip.style.top = `${e.pageY + 10}px`;
-        }
+        if (!this.tooltipEngine) return;
+        element.addEventListener('mouseenter', () => {
+            this.tooltipEngine.show(html);
+        });
+        element.addEventListener('mouseleave', () => {
+            this.tooltipEngine.hide();
+        });
     }
 }
