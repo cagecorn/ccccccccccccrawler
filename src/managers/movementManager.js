@@ -4,6 +4,30 @@ export class MovementManager {
         this.stuckTimers = new Map();
     }
 
+    setPath(entity, path) {
+        if (Array.isArray(path) && path.length > 0) {
+            entity._aiPath = path.slice();
+            entity._aiPathIndex = 0;
+        } else {
+            entity._aiPath = null;
+            entity._aiPathIndex = 0;
+        }
+    }
+
+    followPath(entity, context) {
+        if (!entity._aiPath || entity._aiPathIndex >= entity._aiPath.length) return;
+        const tileSize = this.mapManager.tileSize;
+        const step = entity._aiPath[entity._aiPathIndex];
+        const target = { x: step.x * tileSize, y: step.y * tileSize };
+        this.moveEntityTowards(entity, target, context);
+        if (Math.hypot(entity.x - target.x, entity.y - target.y) <= entity.speed) {
+            entity._aiPathIndex++;
+            if (entity._aiPathIndex >= entity._aiPath.length) {
+                entity._aiPath = null;
+            }
+        }
+    }
+
     moveEntityTowards(entity, target, context) {
         const distance = Math.hypot(target.x - entity.x, target.y - entity.y);
         if (distance < entity.width) {
