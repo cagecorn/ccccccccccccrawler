@@ -62,6 +62,7 @@ export class Game {
         this.loader.loadImage('mercenary', 'assets/images/warrior.png');
         this.loader.loadImage('floor', 'assets/floor.png');
         this.loader.loadImage('wall', 'assets/wall.png');
+        this.loader.loadImage('wall_face', 'assets/wall.png');
         this.loader.loadImage('gold', 'assets/gold.png');
         this.loader.loadImage('potion', 'assets/potion.png');
         this.loader.loadImage('sword', 'assets/images/shortsword.png');
@@ -1216,15 +1217,24 @@ export class Game {
 
         const contexts = layerManager.contexts;
 
-        mapManager.render(contexts.mapBase, contexts.mapDecor, assets);
+        mapManager.render(contexts, assets);
         itemManager.render(contexts.mapDecor);
 
         // buffManager.renderGroundAuras(contexts.groundFx, ...); // (미래 구멍)
 
-        monsterManager.monsters.filter(m => !m.isHidden).forEach(m => m.render(contexts.entity));
-        mercenaryManager.mercenaries.filter(m => !m.isHidden).forEach(m => m.render(contexts.entity));
-        this.petManager.pets.filter(p => !p.isHidden).forEach(p => p.render(contexts.entity));
-        if (!gameState.player.isHidden) gameState.player.render(contexts.entity);
+        const allEntitiesToRender = [
+            gameState.player,
+            ...(monsterManager?.monsters || []),
+            ...(mercenaryManager?.mercenaries || []),
+            ...(this.petManager?.pets || [])
+        ].filter(e => e && !e.isDying && !e.isHidden);
+
+        allEntitiesToRender.sort((a, b) => a.y - b.y);
+
+        const entityCtx = contexts.entity;
+        for (const entity of allEntitiesToRender) {
+            entity.render(entityCtx);
+        }
 
         fogManager.render(contexts.vfx, mapManager.tileSize);
         uiManager.renderHpBars(contexts.vfx, gameState.player, monsterManager.monsters, mercenaryManager.mercenaries);

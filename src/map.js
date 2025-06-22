@@ -357,21 +357,45 @@ export class MapManager {
         return false;
     }
 
-    render(ctxBase, ctxDecor, assets) {
-        const wallImage = assets.wall;
+    render(contexts, assets) {
+        const { mapBase: ctxBase, mapDecor: ctxDecor, vfx: ctxVfx } = contexts;
+        if (!ctxBase || !ctxDecor || !ctxVfx) {
+            console.error("Map rendering requires mapBase, mapDecor, and vfx contexts.");
+            return;
+        }
+
+        const wallTopImage = assets.wall;
+        const wallFaceImage = assets.wall_face;
         const floorImage = assets.floor;
         const lavaImage = assets.lava || floorImage;
 
         for (let y = 0; y < this.height; y++) {
             for (let x = 0; x < this.width; x++) {
-                let imageToDraw = floorImage;
-                if (this.map[y][x] === this.tileTypes.WALL) {
-                    imageToDraw = wallImage;
-                } else if (this.map[y][x] === this.tileTypes.LAVA) {
-                    imageToDraw = lavaImage;
+
+                // 1. 항상 기본 바닥 타일을 먼저 그립니다.
+                if (floorImage) {
+                    ctxBase.drawImage(floorImage, x * this.tileSize, y * this.tileSize, this.tileSize, this.tileSize);
                 }
-                if (imageToDraw) {
-                    ctxBase.drawImage(imageToDraw, x * this.tileSize, y * this.tileSize, this.tileSize, this.tileSize);
+
+                // 2. 현재 타일이 벽일 경우, 입체적으로 그립니다.
+                if (this.map[y][x] === this.tileTypes.WALL) {
+                    // 바로 윗 타일이 벽이 아닐 경우에만 '벽면'을 그립니다.
+                    if (y > 0 && this.map[y - 1][x] !== this.tileTypes.WALL) {
+                        if (wallFaceImage) {
+                            // 벽면은 캐릭터보다 아래 레이어(mapDecor)에 그립니다.
+                            ctxDecor.drawImage(wallFaceImage, x * this.tileSize, y * this.tileSize, this.tileSize, this.tileSize);
+                        }
+                    }
+
+                    // '벽 윗면'은 캐릭터보다 높은 레이어(vfx)에 그려서 발 부분을 가리도록 합니다.
+                    if (wallTopImage) {
+                        ctxVfx.drawImage(wallTopImage, x * this.tileSize, y * this.tileSize, this.tileSize, this.tileSize);
+                    }
+                } else if (this.map[y][x] === this.tileTypes.LAVA) {
+                    // 기본 바닥 대신 용암 타일을 그립니다.
+                    if (lavaImage) {
+                        ctxBase.drawImage(lavaImage, x * this.tileSize, y * this.tileSize, this.tileSize, this.tileSize);
+                    }
                 }
             }
         }
