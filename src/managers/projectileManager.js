@@ -1,13 +1,15 @@
 import { Projectile } from "../entities.js";
 import { findEntitiesInRadius } from '../utils/entityUtils.js';
+import { AreaOfEffectEngine } from '../systems/AreaOfEffectEngine.js';
 
 export class ProjectileManager {
-    constructor(eventManager, assets, vfxManager = null, knockbackEngine = null) {
+    constructor(eventManager, assets, vfxManager = null, knockbackEngine = null, aoeEngine = null) {
         this.projectiles = [];
         this.eventManager = eventManager;
         this.assets = assets;
         this.vfxManager = vfxManager;
         this.knockbackEngine = knockbackEngine;
+        this.aoeEngine = aoeEngine instanceof AreaOfEffectEngine ? aoeEngine : null;
         console.log("[ProjectileManager] Initialized");
     }
 
@@ -94,7 +96,17 @@ export class ProjectileManager {
                         this.vfxManager.addShockwave(impactPos.x, impactPos.y, { maxRadius: radius });
                     }
 
-                    const aoeTargets = findEntitiesInRadius(impactPos.x, impactPos.y, radius, allEntities, result.target);
+                    let aoeTargets;
+                    if (this.aoeEngine) {
+                        aoeTargets = this.aoeEngine.findTargets(
+                            { x: impactPos.x, y: impactPos.y },
+                            allEntities,
+                            'circle',
+                            { radius }
+                        );
+                    } else {
+                        aoeTargets = findEntitiesInRadius(impactPos.x, impactPos.y, radius, allEntities, result.target);
+                    }
                     for (const aoeTarget of aoeTargets) {
                         if (aoeTarget.isFriendly !== proj.caster.isFriendly) {
                             this.eventManager.publish('log', { message: `[음파 화살]이 ${aoeTarget.constructor.name}에게 피해를 입힙니다!`, color: '#add8e6' });

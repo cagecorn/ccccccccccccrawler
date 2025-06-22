@@ -25,6 +25,7 @@ import { KnockbackEngine } from './systems/KnockbackEngine.js';
 import { SupportEngine } from './systems/SupportEngine.js';
 import { InventoryEngine } from './systems/InventoryEngine.js';
 import { SpawningEngine } from './systems/SpawningEngine.js';
+import { AreaOfEffectEngine } from './systems/AreaOfEffectEngine.js';
 import { SKILLS } from './data/skills.js';
 import { EFFECTS } from './data/effects.js';
 import { Item } from './entities.js';
@@ -161,6 +162,7 @@ export class Game {
         this.microEngine = new MicroEngine(this.eventManager);
         this.microCombatManager = new MicroCombatManager(this.eventManager);
         this.synergyManager = new Managers.SynergyManager(this.eventManager);
+        this.aoeEngine = new AreaOfEffectEngine();
         this.speechBubbleManager = this.managers.SpeechBubbleManager;
         this.equipmentRenderManager = this.managers.EquipmentRenderManager;
         this.mercenaryManager.equipmentRenderManager = this.equipmentRenderManager;
@@ -180,7 +182,8 @@ export class Game {
             this.eventManager,
             assets,
             this.vfxManager,
-            this.knockbackEngine
+            this.knockbackEngine,
+            this.aoeEngine
         );
         this.managers.ProjectileManager = this.projectileManager;
         this.itemAIManager = new Managers.ItemAIManager(
@@ -585,13 +588,34 @@ export class Game {
             const { attacker, defender } = data;
             if (!defender || defender.hp <= 0) return;
 
-            // 1. 피해를 입힙니다.
-            this.handleAttack(attacker, defender, { name: '돌진' });
-            
-            // 2. 에어본 효과를 적용합니다.
-            this.effectManager.addEffect(defender, 'airborne');
+            const splashRadius = 60;
+            const aoeCenter = {
+                x: defender.x + defender.width / 2,
+                y: defender.y + defender.height / 2
+            };
+            const allEnemies = this.monsterManager.monsters.filter(
+                m => m !== attacker && !m.isFriendly
+            );
+            const targetsInSplash = this.aoeEngine.findTargets(
+                aoeCenter,
+                allEnemies,
+                'circle',
+                { radius: splashRadius }
+            );
 
-            this.eventManager.publish('log', { message: `\uD83D\uDCA8 ${defender.constructor.name}를 공중에 띄웠습니다!`, color: 'lightblue' });
+            for (const target of targetsInSplash) {
+                const damageOptions = { name: '돌진 스플래시' };
+                if (target === defender) damageOptions.name = '돌진';
+                this.handleAttack(attacker, target, damageOptions);
+                this.effectManager.addEffect(target, 'airborne');
+            }
+
+            if (targetsInSplash.length > 0) {
+                this.eventManager.publish('log', {
+                    message: `\uD83D\uDCA8 ${attacker.constructor.name}의 돌진이 ${targetsInSplash.length}명의 적을 공중에 띄웠습니다!`,
+                    color: 'lightblue'
+                });
+            }
         });
 
         // 기존의 knockback_request 이벤트는 KnockbackEngine으로 대체되었습니다.
