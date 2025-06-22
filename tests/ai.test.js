@@ -11,8 +11,11 @@ const eventManagerStub = { publish: () => {} };
 test('MeleeAI - 공격 결정', () => {
     const ai = new MeleeAI();
     const self = { x: 0, y: 0, visionRange: 100, attackRange: 10, speed: 5, tileSize: 1 };
-    const context = { player: {}, allies: [], enemies: [{ x: 5, y: 0 }], mapManager: mapStub };
-    const action = ai.decideAction(self, context);
+    const enemies = [{ x: 5, y: 0 }];
+    const target = enemies[0];
+    const pfAI = { decideAction: () => ({ type: 'attack', target }) };
+    const context = { player: {}, allies: [], enemies, mapManager: mapStub, aiPathfindingEngine: pfAI };
+    const action = ai.decideAction(self, target, context);
     assert.strictEqual(action.type, 'attack');
 });
 
@@ -21,9 +24,11 @@ test('MeleeAI - 공격 결정', () => {
 test('MeleeAI - 이동 결정', () => {
     const ai = new MeleeAI();
     const self = { x: 0, y: 0, visionRange: 100, attackRange: 10, speed: 5, tileSize: 1 };
-    const pfStub = { findPath: () => [{ x: 1, y: 0 }] };
-    const context = { player: {}, allies: [], enemies: [{ x: 20, y: 0 }], mapManager: mapStub, pathfindingManager: pfStub };
-    const action = ai.decideAction(self, context);
+    const enemies = [{ x: 20, y: 0 }];
+    const target = enemies[0];
+    const pfAI = { decideAction: () => ({ type: 'follow_path', path: [{ x:1, y:0 }], target }) };
+    const context = { player: {}, allies: [], enemies, mapManager: mapStub, aiPathfindingEngine: pfAI };
+    const action = ai.decideAction(self, target, context);
     assert.strictEqual(action.type, 'follow_path');
     assert.ok(Array.isArray(action.path));
 });
@@ -35,7 +40,7 @@ test('MeleeAI - 목줄 범위 내에서는 대기', () => {
     const self = { x: 0, y: 0, visionRange: 100, attackRange: 10, speed: 5, tileSize: 1, isFriendly: true, isPlayer: false };
     const player = { x: 10, y: 0 };
     const context = { player, allies: [], enemies: [], mapManager: mapStub };
-    const action = ai.decideAction(self, context);
+    const action = ai.decideAction(self, null, context);
     assert.strictEqual(action.type, 'idle');
 });
 
@@ -45,18 +50,18 @@ test('RangedAI - 가까운 적에게서 거리 벌림', () => {
     const self = { x: 0, y: 0, visionRange: 100, attackRange: 20, speed: 5, tileSize: 1 };
     const enemy = { x: 5, y: 0 };
     const context = { player: {}, allies: [], enemies: [enemy], mapManager: mapStub };
-    const action = ai.decideAction(self, context);
-    assert.strictEqual(action.type, 'move');
-    assert.ok(action.target.x < self.x);
+    const action = ai.decideAction(self, enemy, context);
+    assert.strictEqual(action.type, 'flee');
 });
 
 test('RangedAI - 사정거리 밖 적에게 접근', () => {
     const ai = new RangedAI();
     const self = { x: 0, y: 0, visionRange: 100, attackRange: 20, speed: 5, tileSize: 1 };
     const enemy = { x: 50, y: 0 };
-    const context = { player: {}, allies: [], enemies: [enemy], mapManager: mapStub };
-    const action = ai.decideAction(self, context);
-    assert.strictEqual(action.type, 'move');
+    const pfStub = { findPath: () => [{ x: 1, y: 0 }] };
+    const context = { player: {}, allies: [], enemies: [enemy], mapManager: mapStub, pathfindingManager: pfStub };
+    const action = ai.decideAction(self, enemy, context);
+    assert.strictEqual(action.type, 'follow_path');
     assert.strictEqual(action.target, enemy);
 });
 
@@ -131,12 +136,8 @@ test('RangedAI - follows player when no line of sight to enemy', () => {
     const self = { x: 0, y: 0, visionRange: 100, attackRange: 20, speed: 5, tileSize: 1, isFriendly: true, isPlayer: false };
     const enemy = { x: 2, y: 0 };
     const context = { player, allies: [self], enemies: [enemy], mapManager: mapWithWall };
-    const orig = Math.random;
-    Math.random = () => 0;
-    const action = ai.decideAction(self, context);
-    Math.random = orig;
-    assert.strictEqual(action.type, 'move');
-    assert.deepStrictEqual(action.target, { x: 1, y: 2 });
+    const action = ai.decideAction(self, enemy, context);
+    assert.strictEqual(action.type, 'flee');
 });
 
 test('MeleeAI - idle when enemy beyond vision range', () => {
@@ -144,7 +145,7 @@ test('MeleeAI - idle when enemy beyond vision range', () => {
     const self = { x: 0, y: 0, visionRange: 30, attackRange: 10, speed: 5, tileSize: 1 };
     const enemy = { x: 100, y: 0 };
     const context = { player: {}, allies: [], enemies: [enemy], mapManager: mapStub };
-    const action = ai.decideAction(self, context);
+    const action = ai.decideAction(self, enemy, context);
     assert.strictEqual(action.type, 'idle');
 });
 

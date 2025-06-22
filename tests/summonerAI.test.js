@@ -11,7 +11,7 @@ describe('SummonerAI', () => {
             mp: 30, skills: ['summon_skeleton'], skillCooldowns: {}, properties: {}
         };
         const context = { player: {}, allies: [self], enemies: [], mapManager: mapStub };
-        const action = ai.decideAction(self, context);
+        const action = ai.decideAction(self, null, context);
         assert.strictEqual(action.type, 'skill');
         assert.strictEqual(action.skillId, 'summon_skeleton');
     });
@@ -32,7 +32,7 @@ describe('SummonerAI', () => {
             enemies: [],
             mapManager: mapStub
         };
-        const action = ai.decideAction(self, context);
+        const action = ai.decideAction(self, null, context);
         assert.notStrictEqual(action.type, 'skill');
     });
 });

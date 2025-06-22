@@ -2,6 +2,7 @@
 import { SKILLS } from '../data/skills.js';
 import { WEAPON_SKILLS } from '../data/weapon-skills.js';
 import { MbtiEngine } from './ai/MbtiEngine.js';
+import { RangedAI } from '../ai.js';
 
 export const STRATEGY = {
     IDLE: 'idle',
@@ -220,25 +221,23 @@ export class MetaAIManager {
     }
 
     update(context) {
+        const { visionEngine, targetingEngine } = context;
         for (const groupId in this.groups) {
             const group = this.groups[groupId];
-            const currentContext = {
-                ...context,
-                allies: group.members,
-                enemies: Object.values(this.groups).filter(g => g.id !== groupId).flatMap(g => g.members)
-            };
+            const enemies = Object.values(this.groups)
+                .filter(g => g.id !== groupId)
+                .flatMap(g => g.members);
+            const currentContext = { ...context, allies: group.members, enemies };
 
-            const membersSorted = [...group.members].sort((a,b) => (b.attackSpeed || 1) - (a.attackSpeed || 1));
+            const membersSorted = [...group.members].sort((a, b) => (b.attackSpeed || 1) - (a.attackSpeed || 1));
             for (const member of membersSorted) {
                 if (member.hp <= 0) continue;
 
-                // 에어본 상태이면, 이번 턴 행동을 건너뜀
                 if (Array.isArray(member.effects) && member.effects.some(e => e.id === 'airborne')) {
                     if (typeof member.update === 'function') member.update(currentContext);
                     continue;
                 }
 
-                // 1단계: 쿨다운 감소 등 상태 업데이트
                 if (typeof member.update === 'function') {
                     member.update(currentContext);
                 } else {
@@ -246,37 +245,59 @@ export class MetaAIManager {
                     if (typeof member.applyRegen === 'function') member.applyRegen();
                 }
 
-                // 2단계: 행동 결정
+                const visibleEnemies = visionEngine
+                    ? visionEngine.getVisibleTargets(member, enemies)
+                    : enemies;
+
+                const mbti = member.properties?.mbti || '';
+                let rule = member.fallbackAI instanceof RangedAI ? 'closest_ranged' : 'closest';
+                if (mbti.includes('T')) rule = 'weakest';
+                else if (mbti.includes('F')) rule = 'ally_focus';
+
+                const target = targetingEngine
+                    ? targetingEngine.findBestTarget(member, visibleEnemies, { rule, context: currentContext })
+                    : visibleEnemies[0] || null;
+                member.currentTarget = target;
+
                 let action = { type: 'idle' };
 
-                // 2.1: 역할(Role) AI가 먼저 행동을 결정 (힐, 소환 등)
                 if (member.roleAI) {
-                    action = member.roleAI.decideAction(member, currentContext);
+                    if (member.roleAI.decideAction.length >= 3) {
+                        action = member.roleAI.decideAction(member, target, currentContext);
+                    } else {
+                        action = member.roleAI.decideAction(member, currentContext);
+                    }
                 }
 
-                // 2.2: 역할 AI가 특별한 행동을 하지 않으면, 무기(Weapon) AI가 전투 행동을 결정
                 if (action.type === 'idle') {
                     const weapon = member.equipment?.weapon;
                     const combatAI = context.microItemAIManager?.getWeaponAI(weapon);
                     if (combatAI) {
-                        action = combatAI.decideAction(member, weapon, currentContext);
+                        const weaponContext = { ...currentContext, enemies: visibleEnemies };
+                        action = combatAI.decideAction(member, weapon, weaponContext);
                     }
                 }
 
-                // 2.3: 무기 AI도 할 일이 없으면, 최후의 보루(Fallback) AI가 기본 행동 결정
                 if (action.type === 'idle') {
                     if (member.fallbackAI) {
-                        action = member.fallbackAI.decideAction(member, currentContext);
-                    } else if (member.ai && !member.roleAI) { // 이전 버전 호환성
-                        action = member.ai.decideAction(member, currentContext);
+                        if (member.fallbackAI.decideAction.length >= 3) {
+                            action = member.fallbackAI.decideAction(member, target, currentContext);
+                        } else {
+                            action = member.fallbackAI.decideAction(member, currentContext);
+                        }
+                    } else if (member.ai && !member.roleAI) {
+                        if (member.ai.decideAction.length >= 3) {
+                            action = member.ai.decideAction(member, target, currentContext);
+                        } else {
+                            action = member.ai.decideAction(member, currentContext);
+                        }
                     }
                 }
-                
-                // AI가 행동을 결정한 직후 MBTI 엔진 처리
+
                 this.mbtiEngine.process(member, { ...action, context: currentContext });
 
-                if (context.visionEngine) {
-                    context.visionEngine.updateFacingDirection(member);
+                if (visionEngine) {
+                    visionEngine.updateFacingDirection(member);
                 }
 
                 this.executeAction(member, action, currentContext);
