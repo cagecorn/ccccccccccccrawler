@@ -131,7 +131,12 @@ export class CombatCalculator {
         finalDamage += details.fromRunes;
 
         // 4. 방어력에 의한 감소
-        details.defenseReduction = defender.stats.get('defense');
+        if (defender.stats && typeof defender.stats.get === 'function') {
+            details.defenseReduction = defender.stats.get('defense');
+        } else {
+            // 최소한의 호환성을 위해 기본 defense 필드를 확인한다
+            details.defenseReduction = defender.defense || 0;
+        }
         finalDamage = Math.max(1, finalDamage - details.defenseReduction);
         finalDamage *= damageMultiplier;
         finalDamage = Math.floor(finalDamage);
