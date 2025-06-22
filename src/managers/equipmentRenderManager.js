@@ -14,8 +14,8 @@ export class EquipmentRenderManager {
 
         const drawWidth = entity.width * 0.8;
         const drawHeight = entity.height * 0.8;
-        const drawX = entity.width * 0.1;
-        const drawY = entity.height * -1.5;
+        const drawX = entity.width * 0.4;
+        const drawY = entity.height * -1;
 
         ctx.drawImage(weapon.image, drawX, drawY, drawWidth, drawHeight);
     }
