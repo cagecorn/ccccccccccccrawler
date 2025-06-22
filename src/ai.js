@@ -78,59 +78,12 @@ export class CompositeAI extends AIArchetype {
 
 // --- 전사형 AI ---
 export class MeleeAI extends AIArchetype {
-    decideAction(self, context) {
-        const { enemies, visionEngine, targetingEngine, aiPathfindingEngine } = context;
-
-        const visibleEnemies = visionEngine
-            ? visionEngine.getVisibleTargets(self, enemies)
-            : enemies.filter(e => Math.hypot(e.x - self.x, e.y - self.y) < self.visionRange);
-
-        const mbti = self.properties?.mbti || '';
-        let rule = 'closest';
-        if (mbti.includes('T')) rule = 'weakest';
-        else if (mbti.includes('F')) rule = 'ally_focus';
-
-        const target = targetingEngine
-            ? targetingEngine.findBestTarget(self, visibleEnemies, { rule, context })
-            : visibleEnemies[0] || null;
-        let action;
-        if (aiPathfindingEngine) {
-            action = aiPathfindingEngine.decideAction(self, target, context);
-        } else {
-            const { pathfindingManager, mapManager, player } = context;
-            if (target) {
-                const dist = Math.hypot(target.x - self.x, target.y - self.y);
-                if (dist < self.attackRange) {
-                    action = { type: 'attack', target };
-                } else if (pathfindingManager && mapManager) {
-                    const sx = Math.floor(self.x / mapManager.tileSize);
-                    const sy = Math.floor(self.y / mapManager.tileSize);
-                    const tx = Math.floor(target.x / mapManager.tileSize);
-                    const ty = Math.floor(target.y / mapManager.tileSize);
-                    const path = pathfindingManager.findPath(sx, sy, tx, ty, () => false);
-                    if (path && path.length > 0) {
-                        action = { type: 'follow_path', path, target };
-                    }
-                }
-            } else {
-                const leashRadius = 300;
-                const distanceToPlayer = Math.hypot(self.x - player.x, self.y - player.y);
-                if (distanceToPlayer > leashRadius && pathfindingManager && mapManager) {
-                    const sx = Math.floor(self.x / mapManager.tileSize);
-                    const sy = Math.floor(self.y / mapManager.tileSize);
-                    const px = Math.floor(player.x / mapManager.tileSize);
-                    const py = Math.floor(player.y / mapManager.tileSize);
-                    const pathToPlayer = pathfindingManager.findPath(sx, sy, px, py, () => false);
-                    if (pathToPlayer && pathToPlayer.length > 0) {
-                        action = { type: 'follow_path', path: pathToPlayer, target: player };
-                    }
-                }
-            }
-            if (!action) action = { type: 'idle' };
-        }
-
-        self.currentTarget = target || context.player;
-        return action;
+    // MetaAIManager가 타겟을 지정해 주므로, 여기서는 그 타겟을 어떻게 추적할지만 판단한다.
+    decideAction(self, target, context) {
+        const { aiPathfindingEngine } = context;
+        return aiPathfindingEngine
+            ? aiPathfindingEngine.decideAction(self, target, context)
+            : { type: 'idle' };
     }
 }
 
@@ -243,7 +196,6 @@ export class HealerAI extends AIArchetype {
     }
 }
 
-// ... PurifierAI, RangedAI, WizardAI, SummonerAI 클래스는 변경 없습니다 ...
 
 // --- 정화 전용 AI ---
 export class PurifierAI extends AIArchetype {
@@ -304,111 +256,29 @@ export class PurifierAI extends AIArchetype {
 
 // --- 원거리형 AI ---
 export class RangedAI extends AIArchetype {
-    decideAction(self, context) {
-        const { player, allies, enemies, mapManager, eventManager, visionEngine } = context;
-
-        const currentVisionRange = self.stats?.get('visionRange') ?? self.visionRange;
-        const visibleEnemies = visionEngine
-            ? visionEngine.getVisibleTargets(self, enemies)
-            : enemies.filter(e => Math.hypot(e.x - self.x, e.y - self.y) < currentVisionRange);
-        const targetList = visibleEnemies;
-
-        if (targetList.length === 0) {
-            if (self.isFriendly && !self.isPlayer) {
-                const target = this._getWanderPosition(self, player, allies, mapManager);
-                if (Math.hypot(target.x - self.x, target.y - self.y) > self.tileSize * 0.3) {
-                    return { type: 'move', target };
-                }
-            }
-            return { type: 'idle' };
+    decideAction(self, target, context) {
+        if (!target) {
+            return context.aiPathfindingEngine
+                ? context.aiPathfindingEngine.decideAction(self, null, context)
+                : { type: 'idle' };
         }
 
-        // T/F 성향에 따른 타겟팅 우선순위 결정
-        const mbti = self.properties?.mbti || '';
-        let potentialTargets = [...targetList];
-        if (mbti.includes('T')) {
-            potentialTargets.sort((a, b) => a.hp - b.hp);
-        } else if (mbti.includes('F')) {
-            const allyTargets = new Set();
-            allies.forEach(ally => {
-                if (ally.currentTarget) allyTargets.add(ally.currentTarget.id);
-            });
-            const focusedTarget = potentialTargets.find(t => allyTargets.has(t.id));
-            if (focusedTarget) {
-                potentialTargets = [focusedTarget];
+        const distance = Math.hypot(target.x - self.x, target.y - self.y);
+        const optimalRange = self.attackRange * 0.8;
+
+        if (distance <= self.attackRange && distance > self.attackRange * 0.3) {
+            return { type: 'attack', target };
+        } else if (distance <= self.attackRange * 0.3) {
+            const fleeVector = { x: self.x - target.x, y: self.y - target.y };
+            return { type: 'flee', vector: fleeVector };
+        } else {
+            const { pathfindingManager } = context;
+            const approachPoint = { x: target.x, y: target.y };
+            const path = pathfindingManager?.findPath({ x: self.x, y: self.y }, approachPoint);
+            if (path && path.length > 0) {
+                return { type: 'follow_path', path, target };
             }
         }
-
-        let nearestTarget = null;
-        let minDistance = Infinity;
-        for (const target of potentialTargets) {
-            const dx = target.x - self.x;
-            const dy = target.y - self.y;
-            const distance = Math.sqrt(dx * dx + dy * dy);
-            if (distance < minDistance) {
-                minDistance = distance;
-                nearestTarget = target;
-            }
-        }
-
-        if (nearestTarget) {
-            const hasLOS = hasLineOfSight(
-                Math.floor(self.x / mapManager.tileSize),
-                Math.floor(self.y / mapManager.tileSize),
-                Math.floor(nearestTarget.x / mapManager.tileSize),
-                Math.floor(nearestTarget.y / mapManager.tileSize),
-                mapManager
-            );
-            if (!hasLOS && self.isFriendly && !self.isPlayer) {
-                const target = this._getWanderPosition(self, player, allies, mapManager);
-                if (Math.hypot(target.x - self.x, target.y - self.y) > self.tileSize * 0.3) {
-                    return { type: 'move', target };
-                }
-            }
-
-            if (hasLOS) {
-                if (minDistance <= self.attackRange && minDistance > self.attackRange * 0.5) {
-                    // S/N 성향에 따른 스킬 사용 시점 표시
-                    if (mbti.includes('S')) {
-                        // 스킬 사용 선호
-                    } else if (mbti.includes('N') && self.hp / self.maxHp < 0.6) {
-                        // 위기 상황에서 스킬 사용
-                    }
-
-                    const skillId = self.skills && self.skills[0];
-                    const skill = SKILLS[skillId];
-                    if (
-                        skill &&
-                        self.mp >= skill.manaCost &&
-                        (self.skillCooldowns[skillId] || 0) <= 0
-                    ) {
-                        return { type: 'skill', target: nearestTarget, skillId };
-                    }
-                    return { type: 'attack', target: nearestTarget };
-                }
-
-                if (minDistance <= self.attackRange * 0.5) {
-                    // P 성향은 후퇴하지 않고 돌격
-                    if (mbti.includes('P')) {
-                        return { type: 'move', target: nearestTarget };
-                    }
-                    if (mbti.includes('J')) {
-                        // 계획적인 움직임 표시
-                    }
-                    const dx = nearestTarget.x - self.x;
-                    const dy = nearestTarget.y - self.y;
-                    return { type: 'move', target: { x: self.x - dx, y: self.y - dy } };
-                }
-            }
-
-            return { type: 'move', target: nearestTarget };
-        } else if (self.isFriendly && !self.isPlayer) {
-            const target = this._getWanderPosition(self, player, allies, mapManager);
-            if (Math.hypot(target.x - self.x, target.y - self.y) > self.tileSize * 0.3) {
-                return { type: 'move', target };
-            }
-        }
-
         return { type: 'idle' };
     }
 }
@@ -687,7 +557,7 @@ export class CCGhostAI extends AIArchetype {
 
 // --- 소환사형 AI ---
 export class SummonerAI extends RangedAI {
-    decideAction(self, context) {
+    decideAction(self, target, context) {
         const summonId = SKILLS.summon_skeleton?.id;
         const skill = SKILLS[summonId];
         const maxMinions = self.properties?.maxMinions ?? 1;
@@ -706,7 +576,7 @@ export class SummonerAI extends RangedAI {
             return { type: 'skill', target: self, skillId: summonId };
         }
 
-        return super.decideAction(self, context);
+        return super.decideAction(self, target, context);
     }
 }
 

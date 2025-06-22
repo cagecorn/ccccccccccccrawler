@@ -10,6 +10,9 @@ test('공격 속도가 빠른 유닛이 먼저 공격', () => {
     const aiManager = new MetaAIManager(em);
     const mapManager = { tileSize: 1, isWallAt: () => false };
     const pathfindingManager = { findPath: () => [] };
+    const aiPathfindingEngine = { decideAction: () => ({ type: 'attack', target: enemy }) };
+    const visionEngine = { getVisibleTargets: () => [slow], updateFacingDirection: () => {} };
+    const targetingEngine = { findBestTarget: () => slow };
     const player = { x: 0, y: 0 };
 
     const groupA = aiManager.createGroup('A');
@@ -34,7 +37,8 @@ test('공격 속도가 빠른 유닛이 먼저 공격', () => {
     const order = [];
     em.subscribe('entity_attack', d => order.push(d.attacker.id));
 
-    const context = { player, mapManager, pathfindingManager, eventManager: em, monsterManager:{monsters:[]}, mercenaryManager:{mercenaries:[]} };
+    const enemy = slow;
+    const context = { player, mapManager, pathfindingManager, aiPathfindingEngine, visionEngine, targetingEngine, eventManager: em, monsterManager:{monsters:[]}, mercenaryManager:{mercenaries:[]} };
     aiManager.update(context);
 
     assert.strictEqual(order[0], 'fast');

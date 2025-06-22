@@ -38,8 +38,8 @@
 
 1.  **`MetaAIManager.update()` 호출:** `main.js`의 메인 루프가 `MetaAIManager`에게 업데이트를 명령합니다.
 2.  **`context` 생성:** `MetaAIManager`는 각 유닛에게 필요한 주변 정보(적군 목록, 아군 목록 등)를 담은 `context` 객체를 생성합니다.
-3.  **`decideAction()` 호출:** `MetaAIManager`는 각 유닛의 `ai` 속성에 할당된 AI 유형(예: `MeleeAI`)의 `decideAction(self, context)` 메서드를 호출합니다.
-4.  **행동 결정:** `decideAction` 메서드는 전달받은 `context`와 자신의 상태(`self`)를 분석하여, `{ type: 'move', ... }` 또는 `{ type: 'attack', ... }` 같은 `action` 객체를 반환합니다.
+3.  **타겟 선정 및 `decideAction()` 호출:** `MetaAIManager`가 `visionEngine`과 `targetingEngine`을 사용하여 각 유닛의 현재 타겟을 결정합니다. 이후 AI의 `decideAction(self, target, context)` 메서드를 호출합니다. 타겟 매개변수를 받지 않는 구형 AI는 기존 방식(`decideAction(self, context)`)으로 호출됩니다.
+4.  **행동 결정:** AI는 전달받은 `target`과 `context`를 참고하여 `{ type: 'move', ... }` 또는 `{ type: 'attack', ... }` 같은 `action` 객체를 반환합니다.
 5.  **상태 머신 연동:** `MetaAIManager`의 `executeAction` 함수는 반환된 `action` 객체에 따라 유닛의 실제 행동(이동, 공격)을 실행합니다. 이 과정은 **`state-machine.md`**에 정의된 `IdleState`, `ChasingState`, `AttackingState` 등의 상태로 전환되는 것과 같습니다. 예를 들어 `move` 액션은 `ChasingState`의 핵심 로직을, `attack` 액션은 `AttackingState`의 핵심 로직을 수행합니다.
 
 ### AI `context` 객체 예시
@@ -51,7 +51,10 @@ const context = {
     allies: [ally1, ally2, ...],  // 자신을 포함한 모든 아군 목록
     enemies: [enemy1, enemy2, ...],// 모든 적군 목록
     mapManager: mapManagerObject,       // 맵 정보 및 벽 충돌 확인용
-    eventManager: eventManagerObject    // 이벤트 발행용
+    eventManager: eventManagerObject,   // 이벤트 발행용
+    visionEngine: visionEngineObject,
+    targetingEngine: targetingEngineObject,
+    aiPathfindingEngine: aiPathfindingEngineObject
 };
 4. 확장 계획: 태그와 성격(MBTI) 시스템
 4.1. 태그 기반 AI 전환
