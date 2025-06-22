@@ -1,10 +1,15 @@
-import { Particle } from '../particle.js';
+import { ParticleEngine } from './vfx/ParticleEngine.js';
+import { TextPopupEngine } from './vfx/TextPopupEngine.js';
 
 export class VFXManager {
     constructor(eventManager = null, itemManager = null) {
         this.effects = [];
-        this.particles = [];
-        this.emitters = [];
+
+        this.particleEngine = new ParticleEngine();
+        this.textPopupEngine = new TextPopupEngine();
+
+        this.emitters = this.particleEngine.emitters;
+        this.particles = this.particleEngine.particles;
         this.eventManager = eventManager;
         this.itemManager = itemManager;
         this.knockbackEffectDuration = 15;
@@ -13,7 +18,7 @@ export class VFXManager {
                 this.addKnockbackEffect(data.attacker, data.weapon);
             });
         }
-        console.log("[VFXManager] Initialized");
+        console.log("[VFXManager] Initialized with Internal Engines");
     }
 
     /**
@@ -147,11 +152,7 @@ export class VFXManager {
      * @param {object} [options]
      */
     addParticleBurst(x, y, options = {}) {
-        const count = options.count || 8;
-        const color = options.color || 'yellow';
-        for (let i = 0; i < count; i++) {
-            this.particles.push(new Particle(x, y, color, options));
-        }
+        this.particleEngine.addParticleBurst(x, y, options);
     }
 
     /**
@@ -162,29 +163,7 @@ export class VFXManager {
      * @returns {object} emitter handle
      */
     addEmitter(x, y, options = {}) {
-        const particleOpts = { ...(options.particleOptions || {}) };
-
-        // 텍스트 파티클을 위한 특별 처리
-        if (particleOpts.type === 'text') {
-            particleOpts.text = particleOpts.text || '?';
-            particleOpts.lifespan = 40;
-            particleOpts.gravity = -0.1;
-            particleOpts.speed = 0;
-        }
-
-        const emitter = {
-            id: Math.random().toString(36).substr(2, 9),
-            x,
-            y,
-            spawnRate: options.spawnRate || 2,
-            duration: options.duration !== undefined ? options.duration : 60,
-            particleOptions: particleOpts, // 수정된 옵션 사용
-            followTarget: options.followTarget || null,
-            offsetX: options.offsetX || 0,
-            offsetY: options.offsetY || 0,
-        };
-        this.emitters.push(emitter);
-        return emitter;
+        return this.particleEngine.addEmitter(x, y, options);
     }
 
     /**
@@ -193,14 +172,7 @@ export class VFXManager {
      * @param {object} [options]
      */
     createTrail(target, options = {}) {
-        return this.addEmitter(target.x, target.y, {
-            followTarget: target,
-            spawnRate: options.spawnRate || 1,
-            duration: options.duration !== undefined ? options.duration : -1,
-            particleOptions: options.particleOptions || {},
-            offsetX: options.offsetX || target.width / 2 || 0,
-            offsetY: options.offsetY || target.height / 2 || 0,
-        });
+        return this.particleEngine.createTrail(target, options);
     }
 
     /**
@@ -211,42 +183,15 @@ export class VFXManager {
      * @param {object} [options]
      */
     addHomingBurst(x, y, target, options = {}) {
-        const count = options.count || 12;
-        const particleOpts = {
-            ...options.particleOptions,
-            homingTarget: target,
-        };
-        for (let i = 0; i < count; i++) {
-            this.particles.push(new Particle(x, y, options.color || 'white', particleOpts));
-        }
+        this.particleEngine.addHomingBurst(x, y, target, options);
     }
 
     createDashTrail(fromX, fromY, toX, toY, options = {}) {
-        const particleCount = options.count || 10;
-        const color = options.color || 'rgba(255, 255, 255, 0.5)';
-        const lifespan = options.lifespan || 20;
-        for (let i = 0; i < particleCount; i++) {
-            const progress = i / particleCount;
-            const x = fromX + (toX - fromX) * progress;
-            const y = fromY + (toY - fromY) * progress;
-            const particle = new Particle(x, y, color);
-            particle.lifespan = lifespan;
-            particle.gravity = 0;
-            this.particles.push(particle);
-        }
+        this.particleEngine.createDashTrail(fromX, fromY, toX, toY, options);
     }
 
     createWhipTrail(fromX, fromY, toX, toY) {
-        const particleCount = 12;
-        for (let i = 0; i < particleCount; i++) {
-            const progress = i / particleCount;
-            const x = fromX + (toX - fromX) * progress;
-            const y = fromY + (toY - fromY) * progress;
-            const particle = new Particle(x, y, 'rgba(255, 100, 100, 0.7)');
-            particle.lifespan = 15;
-            particle.gravity = 0;
-            this.particles.push(particle);
-        }
+        this.particleEngine.createWhipTrail(fromX, fromY, toX, toY);
     }
 
     /**
@@ -341,27 +286,7 @@ export class VFXManager {
      * @param {object} [options]
      */
     addTextPopup(text, target, options = {}) {
-        if (!target) return;
-        const duration = options.duration || 30;
-        const baseOffset =
-            options.offsetY !== undefined ? options.offsetY : (target.height || 0);
-        let finalOffset = baseOffset;
-        if (Array.isArray(target.effects) && target.effects.some(e => e.id === 'airborne')) {
-            finalOffset += (target.height || 0) * 0.5;
-        }
-        const effect = {
-            type: 'text_popup',
-            text,
-            x: target.x + (target.width || 0) / 2,
-            y: target.y - finalOffset,
-            duration,
-            life: duration,
-            color: options.color || 'white',
-            floatSpeed: options.floatSpeed || 0.5,
-            alpha: 1.0,
-            font: options.font || '16px Arial'
-        };
-        this.effects.push(effect);
+        this.textPopupEngine.add(text, target, options);
     }
 
     /**
@@ -425,10 +350,7 @@ export class VFXManager {
      * @param {object} emitter
      */
     removeEmitter(emitter) {
-        const idx = this.emitters.indexOf(emitter);
-        if (idx >= 0) {
-            this.emitters.splice(idx, 1);
-        }
+        this.particleEngine.removeEmitter(emitter);
     }
 
     /**
@@ -483,24 +405,8 @@ export class VFXManager {
     }
 
     update() {
-        for (let i = this.emitters.length - 1; i >= 0; i--) {
-            const e = this.emitters[i];
-            if (e.followTarget) {
-                e.x = e.followTarget.x + e.offsetX;
-                e.y = e.followTarget.y + e.offsetY;
-            }
-
-            for (let j = 0; j < e.spawnRate; j++) {
-                this.particles.push(new Particle(e.x, e.y, e.particleOptions.color || 'white', e.particleOptions));
-            }
-
-            if (e.duration > 0) {
-                e.duration--;
-                if (e.duration <= 0) {
-                    this.emitters.splice(i, 1);
-                }
-            }
-        }
+        this.particleEngine.update();
+        this.textPopupEngine.update();
 
         for (let i = this.effects.length - 1; i >= 0; i--) {
             const effect = this.effects[i];
@@ -623,16 +529,6 @@ export class VFXManager {
             continue;
         }
 
-            if (effect.type === 'text_popup') {
-                effect.life--;
-                effect.y -= effect.floatSpeed;
-                effect.alpha = effect.life / effect.duration;
-                if (effect.life <= 0) {
-                    this.effects.splice(i, 1);
-                }
-                continue;
-            }
-
 
             if (effect.type === 'glow') {
                 effect.alpha -= effect.decay;
@@ -663,13 +559,6 @@ export class VFXManager {
             }
         }
 
-        for (let i = this.particles.length - 1; i >= 0; i--) {
-            const p = this.particles[i];
-            p.update();
-            if (p.lifespan <= 0) {
-                this.particles.splice(i, 1);
-            }
-        }
     }
 
     render(ctx) {
@@ -725,14 +614,6 @@ export class VFXManager {
                 ctx.save();
                 ctx.globalAlpha = effect.alpha;
                 ctx.drawImage(effect.image, effect.x - w / 2, effect.y - h / 2, w, h);
-                ctx.restore();
-            } else if (effect.type === 'text_popup') {
-                ctx.save();
-                ctx.globalAlpha = effect.alpha;
-                ctx.fillStyle = effect.color;
-                ctx.font = effect.font;
-                ctx.textAlign = 'center';
-                ctx.fillText(effect.text, effect.x, effect.y);
                 ctx.restore();
             } else if (effect.type === 'glow') {
                 const { x, y, radius } = effect;
@@ -827,9 +708,8 @@ export class VFXManager {
             }
         }
 
-        for (const p of this.particles) {
-            p.render(ctx);
-        }
+        this.particleEngine.render(ctx);
+        this.textPopupEngine.render(ctx);
     }
 }
 
