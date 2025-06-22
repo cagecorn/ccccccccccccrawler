@@ -22,6 +22,7 @@ import { FogManager } from './managers/fogManager.js';
 import { NarrativeManager } from './managers/narrativeManager.js';
 import { TurnManager } from './managers/turnManager.js';
 import { KnockbackEngine } from './systems/KnockbackEngine.js';
+import { SupportEngine } from './systems/SupportEngine.js';
 import { SKILLS } from './data/skills.js';
 import { EFFECTS } from './data/effects.js';
 import { Item } from './entities.js';
@@ -105,7 +106,8 @@ export class Game {
         this.saveLoadManager = new SaveLoadManager();
         this.turnManager = new TurnManager();
         this.narrativeManager = new NarrativeManager();
-        this.factory = new CharacterFactory(assets);
+        this.supportEngine = new SupportEngine();
+        this.factory = new CharacterFactory(assets, this);
 
         // --- 매니저 생성 부분 수정 ---
         this.managers = {};
@@ -1155,6 +1157,7 @@ export class Game {
             equipmentManager: this.equipmentManager,
             vfxManager: this.vfxManager,
             knockbackEngine: this.knockbackEngine,
+            supportEngine: this.supportEngine,
             assets: this.loader.assets,
             metaAIManager,
             microItemAIManager,
