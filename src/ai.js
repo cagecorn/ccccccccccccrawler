@@ -51,7 +51,10 @@ export class AIArchetype {
         return self.wanderTarget || player;
     }
 
-    _filterVisibleEnemies(self, enemies) {
+    _filterVisibleEnemies(self, enemies, context) {
+        if (context?.visionEngine) {
+            return context.visionEngine.getVisibleTargets(self, enemies);
+        }
         const range = self.stats?.get('visionRange') ?? self.visionRange;
         return (enemies || []).filter(e =>
             Math.hypot(e.x - self.x, e.y - self.y) < range);
@@ -153,7 +156,7 @@ export class HealerAI extends AIArchetype {
             a => a.hp < a.maxHp && a.hp / a.maxHp <= healThreshold
         );
         if (candidates.length === 0) {
-            const visibles = this._filterVisibleEnemies(self, enemies);
+            const visibles = this._filterVisibleEnemies(self, enemies, context);
             if (visibles.length > 0) {
                 let potential = [...visibles];
                 let targetCandidate = null;
@@ -420,7 +423,7 @@ export class TankerGhostAI extends AIArchetype {
     decideAction(self, context) {
         const { player, possessedRanged } = context;
 
-        if (this._filterVisibleEnemies(self, [player]).length === 0) {
+        if (this._filterVisibleEnemies(self, [player], context).length === 0) {
             return { type: 'idle' };
         }
 
@@ -471,7 +474,7 @@ export class TankerGhostAI extends AIArchetype {
 export class RangedGhostAI extends AIArchetype {
     decideAction(self, context) {
         const { player, possessedTankers, possessedSupporters } = context;
-        if (this._filterVisibleEnemies(self, [player]).length === 0) {
+        if (this._filterVisibleEnemies(self, [player], context).length === 0) {
             return { type: 'idle' };
         }
         const nearestEnemy = player;
@@ -539,7 +542,7 @@ export class RangedGhostAI extends AIArchetype {
 export class SupporterGhostAI extends AIArchetype {
     decideAction(self, context) {
         const { player, possessedRanged, possessedTankers } = context;
-        if (this._filterVisibleEnemies(self, [player]).length === 0) {
+        if (this._filterVisibleEnemies(self, [player], context).length === 0) {
             return { type: 'idle' };
         }
         const nearestEnemy = player;
@@ -614,7 +617,7 @@ export class SupporterGhostAI extends AIArchetype {
 export class CCGhostAI extends AIArchetype {
     decideAction(self, context) {
         const { player, possessedTankers } = context;
-        if (this._filterVisibleEnemies(self, [player]).length === 0) {
+        if (this._filterVisibleEnemies(self, [player], context).length === 0) {
             return { type: 'idle' };
         }
         let nearestEnemy = player;
@@ -746,7 +749,7 @@ export class BardAI extends AIArchetype {
             }
         }
 
-        const visible = this._filterVisibleEnemies(self, enemies);
+        const visible = this._filterVisibleEnemies(self, enemies, context);
         if (visible.length > 0) {
             let potential = [...visible];
             let targetCandidate = null;

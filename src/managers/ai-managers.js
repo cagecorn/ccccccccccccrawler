@@ -49,6 +49,13 @@ export class MetaAIManager {
 
     executeAction(entity, action, context) {
         if (!action || !action.type || action.type === 'idle') return;
+
+        if (action.type === 'move' && context.aiPathfindingEngine && action.target) {
+            const pfAction = context.aiPathfindingEngine.decideAction(entity, action.target, context);
+            if (pfAction && pfAction.type !== 'idle') {
+                action = pfAction;
+            }
+        }
         const { eventManager } = context;
 
         // 행동 결정 로그는 너무 잦은 호출이 성능 문제를 일으킬 수 있어
