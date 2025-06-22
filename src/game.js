@@ -21,6 +21,7 @@ import { MovementManager } from './managers/movementManager.js';
 import { FogManager } from './managers/fogManager.js';
 import { NarrativeManager } from './managers/narrativeManager.js';
 import { TurnManager } from './managers/turnManager.js';
+import { KnockbackEngine } from './systems/KnockbackEngine.js';
 import { SKILLS } from './data/skills.js';
 import { EFFECTS } from './data/effects.js';
 import { Item } from './entities.js';
@@ -168,6 +169,7 @@ export class Game {
         this.itemFactory = new ItemFactory(assets);
         this.pathfindingManager = new PathfindingManager(this.mapManager);
         this.motionManager = new Managers.MotionManager(this.mapManager, this.pathfindingManager);
+        this.knockbackEngine = new KnockbackEngine(this.motionManager, this.vfxManager);
         this.movementManager = new MovementManager(this.mapManager);
         this.fogManager = new FogManager(this.mapManager.width, this.mapManager.height);
         this.particleDecoratorManager = new Managers.ParticleDecoratorManager();
@@ -571,7 +573,7 @@ export class Game {
         // 공격 이벤트 처리
         eventManager.subscribe('entity_attack', (data) => {
             this.microCombatManager.resolveAttack(data.attacker, data.defender);
-            combatCalculator.handleAttack(data);
+            combatCalculator.handleAttack(data, { knockbackEngine: this.knockbackEngine });
 
             const { attacker, defender, skill } = data;
             if (!skill || !skill.projectile) {
@@ -610,22 +612,7 @@ export class Game {
             this.eventManager.publish('log', { message: `\uD83D\uDCA8 ${defender.constructor.name}를 공중에 띄웠습니다!`, color: 'lightblue' });
         });
 
-        // 넉백 요청 이벤트 리스너 추가
-        eventManager.subscribe('knockback_request', (data) => {
-            const { attacker, defender, distance } = data;
-
-            if (this.motionManager) {
-                const result = this.motionManager.knockbackTarget(defender, attacker, distance);
-                if (result) {
-                    eventManager.publish('vfx_request', {
-                        type: 'knockback_animation',
-                        target: defender,
-                        fromPos: result.fromPos,
-                        toPos: result.toPos,
-                    });
-                }
-            }
-        });
+        // 기존의 knockback_request 이벤트는 KnockbackEngine으로 대체되었습니다.
 
         // 피해량 계산 완료 이벤트를 받아 실제 피해 적용
         eventManager.subscribe('damage_calculated', (data) => {
@@ -1167,6 +1154,7 @@ export class Game {
             itemManager: this.itemManager,
             equipmentManager: this.equipmentManager,
             vfxManager: this.vfxManager,
+            knockbackEngine: this.knockbackEngine,
             assets: this.loader.assets,
             metaAIManager,
             microItemAIManager,

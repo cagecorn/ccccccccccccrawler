@@ -42,7 +42,7 @@ export class CombatCalculator {
         return (dx * facing.x + dy * facing.y) > 0;
     }
 
-    handleAttack(data) {
+    handleAttack(data, context = {}) {
         const { attacker, defender, skill } = data;
         const attackingWeapon = attacker.equipment?.main_hand || attacker.equipment?.weapon;
 
@@ -85,7 +85,9 @@ export class CombatCalculator {
             damageMultiplier = 1.5;
             attacker.effects = attacker.effects.filter(e => e.id !== 'charging_shot_effect');
             this.eventManager.publish('log', { message: `[충전된 사격]이 발동됩니다!`, color: 'magenta' });
-            this.eventManager.publish('knockback_request', { attacker, defender, distance: 128 });
+            if (context.knockbackEngine) {
+                context.knockbackEngine.apply(attacker, defender, 128);
+            }
         }
 
         if (skill && skill.id === 'backstab' && this._isBehind(attacker, defender)) {
@@ -139,6 +141,10 @@ export class CombatCalculator {
                     attacker,
                     weapon: attackingWeapon
                 });
+                const strength = attackingWeapon.knockback || 32;
+                if (context.knockbackEngine) {
+                    context.knockbackEngine.apply(attacker, defender, strength);
+                }
             }
         }
     }
