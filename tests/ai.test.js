@@ -35,13 +35,13 @@ test('MeleeAI - 이동 결정', () => {
 
 // 아군이 플레이어를 따라가는지 확인
 
-test('MeleeAI - 목줄 범위 내에서는 대기', () => {
+test('MeleeAI - 목줄 범위 내에서는 플레이어를 따라 이동', () => {
     const ai = new MeleeAI();
     const self = { x: 0, y: 0, visionRange: 100, attackRange: 10, speed: 5, tileSize: 1, isFriendly: true, isPlayer: false };
     const player = { x: 10, y: 0 };
     const context = { player, allies: [], enemies: [], mapManager: mapStub };
     const action = ai.decideAction(self, null, context);
-    assert.strictEqual(action.type, 'idle');
+    assert.strictEqual(action.type, 'move');
 });
 
 // RangedAI specific behavior
