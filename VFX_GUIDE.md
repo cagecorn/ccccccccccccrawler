@@ -4,6 +4,8 @@
 
 ## VFXManager 역할
 - `VFXManager`는 파티클과 스프라이트 효과를 관리합니다.
+- 내부적으로는 `ParticleEngine`과 `TextPopupEngine` 두 엔진을 사용해 파티클과 팝업
+  처리를 전담합니다.
 - `addGlow(x, y, options)` : 이동하는 투사체의 잔광 등을 만듭니다.
 - `addSpriteEffect(image, x, y, options)` : 특정 위치에 잠깐 표시되는 이미지 효과를 추가합니다.
 - `flashEntity(entity, options)` : 대상 스프라이트를 잠깐 특정 색으로 덮어써 반짝이는 효과를 만듭니다.

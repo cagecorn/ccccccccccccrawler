@@ -62,6 +62,8 @@
 | `turnManager.js` | 턴 기반 전투 모드에서 행동 순서를 결정하도록 설계되었습니다. |
 | `uiManager.js` | 인벤토리와 용병 패널 등 DOM 기반 UI 요소를 관리합니다. |
 | `vfxManager.js` | 파티클 및 스프라이트 효과를 생성하여 시각 연출을 담당합니다. |
+| `vfx/ParticleEngine.js` | 파티클과 이미터 생성을 전담하는 내부 엔진입니다. |
+| `vfx/TextPopupEngine.js` | 데미지 수치 등 부유하는 텍스트 팝업을 관리합니다. |
 | `../micro/MicroEngine.js` | 미시 세계 전투와 아이템 상태 갱신을 담당하는 엔진입니다. |
 | `../micro/MicroTurnManager.js` | 모든 아이템의 쿨타임 감소를 전담합니다. |
 
