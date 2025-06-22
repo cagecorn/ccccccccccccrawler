@@ -142,6 +142,7 @@ class Entity {
         ctx.fill();
 
         // 2. 유닛 이미지 그리기 (yOffset 적용)
+        ctx.save();
         ctx.translate(0, yOffset);
         ctx.rotate(rotation);
         const scaleX = this.direction === 'left' ? -1 : 1;
@@ -156,10 +157,13 @@ class Entity {
             ctx.fillRect(-this.width / 2, -this.height, this.width, this.height);
             ctx.globalCompositeOperation = 'source-over';
         }
+        ctx.restore();
 
         // 3. 장비 그리기 (본체와 동일한 변환 적용)
         if (this.equipmentRenderManager) {
             ctx.save();
+            ctx.translate(0, yOffset);
+            ctx.rotate(rotation);
             this.equipmentRenderManager.drawEquipment(ctx, this);
             ctx.restore();
         }
