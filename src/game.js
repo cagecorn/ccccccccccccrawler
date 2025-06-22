@@ -279,7 +279,7 @@ export class Game {
         }
 
         // Spawn monsters in small groups spread across different rooms
-        const groupCount = 3;
+        const groupCount = 6;
         for (let g = 0; g < groupCount; g++) {
             this.aquariumManager.spawnMonsterGroup(3, {
                 image: assets.monster,

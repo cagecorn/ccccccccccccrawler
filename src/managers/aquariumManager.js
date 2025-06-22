@@ -16,6 +16,7 @@ export class AquariumManager {
         this.features = [];
         this.equipmentManager = new EquipmentManager(eventManager);
         this.allWeaponIds = ['short_sword', 'long_bow', 'estoc', 'axe', 'mace', 'staff', 'spear', 'scythe', 'whip', 'dagger', 'violin_bow'];
+        this.allConsumableIds = ['potion', 'pet_food', 'strength_elixir'];
         // 순환하며 각 방에 몬스터를 배치하기 위한 인덱스
         this._roomIndex = 0;
     }
@@ -93,38 +94,42 @@ export class AquariumManager {
 
             this.monsterManager.monsters.push(monster);
 
-            if (Math.random() < 0.8) {
-                const randomWeaponId = this.allWeaponIds[Math.floor(Math.random() * this.allWeaponIds.length)];
-                const weapon = this.itemFactory.create(randomWeaponId, 0, 0, 1);
-                if (weapon) {
-                    this.equipmentManager.equip(monster, weapon, null);
+            const randomWeaponId = this.allWeaponIds[Math.floor(Math.random() * this.allWeaponIds.length)];
+            const weapon = this.itemFactory.create(randomWeaponId, 0, 0, 1);
+            if (weapon) {
+                this.equipmentManager.equip(monster, weapon, null);
 
-                    const armorOptions = ['leather_armor', 'plate_armor', 'metal_armor', 'wizard_robe'];
-                    const armorId = armorOptions[Math.floor(Math.random() * armorOptions.length)];
-                    const armor = this.itemFactory.create(armorId, 0, 0, 1);
-                    if (armor) {
-                        this.equipmentManager.equip(monster, armor, null);
-                    }
+                const armorOptions = ['leather_armor', 'plate_armor', 'metal_armor', 'wizard_robe'];
+                const armorId = armorOptions[Math.floor(Math.random() * armorOptions.length)];
+                const armor = this.itemFactory.create(armorId, 0, 0, 1);
+                if (armor) {
+                    this.equipmentManager.equip(monster, armor, null);
+                }
 
-                    const tags = weapon.tags || [];
-                    const isMelee = tags.includes('melee') && !tags.includes('ranged');
-                    const excluded = tags.includes('spear') || tags.includes('scythe');
+                const consumableId = this.allConsumableIds[Math.floor(Math.random() * this.allConsumableIds.length)];
+                const consumable = this.itemFactory.create(consumableId, 0, 0, 1);
+                if (consumable) {
+                    monster.addConsumable(consumable);
+                }
 
-                    let equipShield = Math.random() < 0.5;
-                    if (opts.ensureShield && !shieldSpawned && i === count - 1) {
-                        equipShield = true;
-                    }
+                const tags = weapon.tags || [];
+                const isMelee = tags.includes('melee') && !tags.includes('ranged');
+                const excluded = tags.includes('spear') || tags.includes('scythe');
 
-                        if (isMelee && !excluded && equipShield) {
-                            const shield = this.itemFactory.create('shield_basic', 0, 0, 1);
-                            if (shield) {
-                                this.equipmentManager.equip(monster, shield, null);
-                                shieldSpawned = true;
-                            }
-                        }
+                let equipShield = Math.random() < 0.5;
+                if (opts.ensureShield && !shieldSpawned && i === count - 1) {
+                    equipShield = true;
+                }
+
+                if (isMelee && !excluded && equipShield) {
+                    const shield = this.itemFactory.create('shield_basic', 0, 0, 1);
+                    if (shield) {
+                        this.equipmentManager.equip(monster, shield, null);
+                        shieldSpawned = true;
                     }
                 }
             }
+        }
     }
 
     addTestingFeature(feature) {
@@ -150,29 +155,33 @@ export class AquariumManager {
                 }
                 this.monsterManager.monsters.push(monster);
 
-                // --- 몬스터에게 무작위 무기 장착 ---
-                if (Math.random() < 0.8) {
-                    const randomWeaponId = this.allWeaponIds[Math.floor(Math.random() * this.allWeaponIds.length)];
-                    const weapon = this.itemFactory.create(randomWeaponId, 0, 0, 1);
-                    if (weapon) {
-                        this.equipmentManager.equip(monster, weapon, null);
+                // --- 몬스터에게 무작위 장비 및 소모품 지급 ---
+                const randomWeaponId = this.allWeaponIds[Math.floor(Math.random() * this.allWeaponIds.length)];
+                const weapon = this.itemFactory.create(randomWeaponId, 0, 0, 1);
+                if (weapon) {
+                    this.equipmentManager.equip(monster, weapon, null);
 
-                        const armorChoices = ['leather_armor', 'plate_armor', 'metal_armor', 'wizard_robe'];
-                        const armorId = armorChoices[Math.floor(Math.random() * armorChoices.length)];
-                        const armor = this.itemFactory.create(armorId, 0, 0, 1);
-                        if (armor) {
-                            this.equipmentManager.equip(monster, armor, null);
-                        }
+                    const armorChoices = ['leather_armor', 'plate_armor', 'metal_armor', 'wizard_robe'];
+                    const armorId = armorChoices[Math.floor(Math.random() * armorChoices.length)];
+                    const armor = this.itemFactory.create(armorId, 0, 0, 1);
+                    if (armor) {
+                        this.equipmentManager.equip(monster, armor, null);
+                    }
 
-                        // 근거리 무기(창, 낫 제외)를 들고 있을 때 확률적으로 방패 장착
-                        const tags = weapon.tags || [];
-                        const isMelee = tags.includes('melee') && !tags.includes('ranged');
-                        const excluded = tags.includes('spear') || tags.includes('scythe');
-                        if (isMelee && !excluded && Math.random() < 0.5) {
-                            const shield = this.itemFactory.create('shield_basic', 0, 0, 1);
-                            if (shield) {
-                                this.equipmentManager.equip(monster, shield, null);
-                            }
+                    const consumableId = this.allConsumableIds[Math.floor(Math.random() * this.allConsumableIds.length)];
+                    const consumable = this.itemFactory.create(consumableId, 0, 0, 1);
+                    if (consumable) {
+                        monster.addConsumable(consumable);
+                    }
+
+                    // 근거리 무기(창, 낫 제외)를 들고 있을 때 확률적으로 방패 장착
+                    const tags = weapon.tags || [];
+                    const isMelee = tags.includes('melee') && !tags.includes('ranged');
+                    const excluded = tags.includes('spear') || tags.includes('scythe');
+                    if (isMelee && !excluded && Math.random() < 0.5) {
+                        const shield = this.itemFactory.create('shield_basic', 0, 0, 1);
+                        if (shield) {
+                            this.equipmentManager.equip(monster, shield, null);
                         }
                     }
                 }
