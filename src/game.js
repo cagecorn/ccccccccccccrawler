@@ -62,7 +62,7 @@ export class Game {
         this.loader.loadImage('mercenary', 'assets/images/warrior.png');
         this.loader.loadImage('floor', 'assets/floor.png');
         this.loader.loadImage('wall', 'assets/wall.png');
-        this.loader.loadImage('wall_face', 'assets/wall.png');
+        this.loader.loadImage('wall_face', 'assets/images/wall-face.png');
         this.loader.loadImage('gold', 'assets/gold.png');
         this.loader.loadImage('potion', 'assets/potion.png');
         this.loader.loadImage('sword', 'assets/images/shortsword.png');
