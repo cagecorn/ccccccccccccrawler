@@ -1,6 +1,7 @@
 // src/ai-managers.js
 import { SKILLS } from '../data/skills.js';
 import { WEAPON_SKILLS } from '../data/weapon-skills.js';
+import { MbtiEngine } from './ai/MbtiEngine.js';
 
 export const STRATEGY = {
     IDLE: 'idle',
@@ -23,6 +24,8 @@ class AIGroup {
 export class MetaAIManager {
     constructor(eventManager) {
         this.groups = {};
+        // 내부 엔진 생성
+        this.mbtiEngine = new MbtiEngine(eventManager);
         // "몬스터 제거" 이벤트를 구독하여 그룹에서 멤버를 제거
         eventManager.subscribe('entity_removed', (data) => {
             for (const groupId in this.groups) {
@@ -243,6 +246,9 @@ export class MetaAIManager {
                     }
                 }
                 
+                // AI가 행동을 결정한 직후 MBTI 엔진 처리
+                this.mbtiEngine.process(member, { ...action, context: currentContext });
+
                 this.executeAction(member, action, currentContext);
             }
         }
