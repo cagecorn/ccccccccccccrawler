@@ -124,7 +124,8 @@ export class Game {
                 name !== 'ItemManager' &&
                 name !== 'AuraManager' &&
                 name !== 'ItemAIManager' &&
-                name !== 'EffectManager'
+                name !== 'EffectManager' &&
+                name !== 'SkillManager'
         );
         for (const managerName of otherManagerNames) {
             this.managers[managerName] = new Managers[managerName](this.eventManager, assets, this.factory);
@@ -141,7 +142,6 @@ export class Game {
         this.equipmentManager = this.managers.EquipmentManager;
         this.uiManager = this.managers.UIManager;
         this.vfxManager = this.managers.VFXManager;
-        this.skillManager = this.managers.SkillManager;
         this.soundManager = this.managers.SoundManager;
         this.effectManager = this.managers.EffectManager;
         this.projectileManager = this.managers.ProjectileManager;
@@ -185,6 +185,17 @@ export class Game {
         this.metaAIManager = new MetaAIManager(this.eventManager);
         this.possessionAIManager = new PossessionAIManager(this.eventManager);
         this.itemFactory.emblems = EMBLEMS;
+
+        this.skillManager = new Managers.SkillManager(
+            this.eventManager,
+            this.vfxManager,
+            this.projectileManager,
+            this.motionManager,
+            this.factory,
+            this.metaAIManager,
+            this.knockbackEngine
+        );
+        this.managers.SkillManager = this.skillManager;
 
         const ghostAIs = {
             tanker: new TankerGhostAI(),

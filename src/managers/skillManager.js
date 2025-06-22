@@ -1,11 +1,23 @@
 import { SKILLS } from '../data/skills.js';
 
 export class SkillManager {
-    constructor(eventManager = null) {
+    constructor(
+        eventManager = null,
+        vfxManager = null,
+        projectileManager = null,
+        motionManager = null,
+        factory = null,
+        metaAIManager = null,
+        knockbackEngine = null
+    ) {
         this.eventManager = eventManager;
+        this.vfxManager = vfxManager;
+        this.projectileManager = projectileManager;
+        this.motionManager = motionManager;
+        this.factory = factory;
+        this.metaAIManager = metaAIManager;
+        this.knockbackEngine = knockbackEngine;
         this.effectManager = null;
-        this.factory = null;
-        this.metaAIManager = null;
         this.monsterManager = null;
         console.log("[SkillManager] Initialized");
 
@@ -29,15 +41,32 @@ export class SkillManager {
 
     applySkillEffects(caster, skill, target = null) {
         if (!skill || !this.effectManager) return;
+
+        const process = (receiver, eff) => {
+            if (typeof eff === 'string') {
+                this.effectManager.addEffect(receiver, eff);
+                return;
+            }
+
+            if (eff.type === 'knockback' && this.knockbackEngine) {
+                this.knockbackEngine.apply(caster, receiver, eff.strength || 5);
+                return;
+            }
+
+            if (eff.id) {
+                this.effectManager.addEffect(receiver, eff.id);
+            }
+        };
+
         if (skill.effects) {
             if (skill.effects.self) {
                 for (const eff of skill.effects.self) {
-                    this.effectManager.addEffect(caster, eff);
+                    process(caster, eff);
                 }
             }
             if (skill.effects.target && target) {
                 for (const eff of skill.effects.target) {
-                    this.effectManager.addEffect(target, eff);
+                    process(target, eff);
                 }
             }
         }
