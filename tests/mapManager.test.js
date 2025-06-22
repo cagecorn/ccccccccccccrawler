@@ -10,7 +10,7 @@ describe('Managers', () => {
     let floorCount = 0;
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
-        if (map[y][x].type !== tileTypes.WALL) {
+        if (map[y][x] !== tileTypes.WALL) {
           if (!startNode) startNode = { x, y };
           floorCount++;
         }
@@ -36,7 +36,7 @@ describe('Managers', () => {
       ];
       for (const n of neighbors) {
         const key = `${n.x},${n.y}`;
-        if (map[n.y] && map[n.y][n.x].type !== tileTypes.WALL && !visited.has(key)) {
+        if (map[n.y] && map[n.y][n.x] !== tileTypes.WALL && !visited.has(key)) {
           visited.add(key);
           queue.push(n);
         }

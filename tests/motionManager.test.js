@@ -10,7 +10,7 @@ test('dashTowards 이동 거리 제한', () => {
         width: 5,
         height: 5,
         tileTypes: { FLOOR: 0, WALL: 1 },
-        map: Array.from({ length: 5 }, () => Array.from({ length: 5 }, () => ({ type: 0 }))),
+        map: Array.from({ length: 5 }, () => Array(5).fill(0)),
         isWallAt: () => false,
     };
     const pathManager = new PathfindingManager(mapManager);
@@ -28,7 +28,7 @@ test('pullTargetTo moves target to closest open tile', () => {
         width: 5,
         height: 5,
         tileTypes: { FLOOR: 0, WALL: 1 },
-        map: Array.from({ length: 5 }, () => Array.from({ length: 5 }, () => ({ type: 0 }))),
+        map: Array.from({ length: 5 }, () => Array(5).fill(0)),
         isWallAt: () => false,
     };
     const pathManager = new PathfindingManager(mapManager);
@@ -48,16 +48,16 @@ test('knockbackTarget stops before hitting a wall', () => {
         width: 5,
         height: 5,
         tileTypes: { FLOOR: 0, WALL: 1 },
-        map: Array.from({ length: 5 }, () => Array.from({ length: 5 }, () => ({ type: 0 }))),
+        map: Array.from({ length: 5 }, () => Array(5).fill(0)),
         isWallAt(x, y) {
             const mx = Math.floor(x);
             const my = Math.floor(y);
             if (mx < 0 || mx >= this.width || my < 0 || my >= this.height) return true;
-            return this.map[my][mx].type === this.tileTypes.WALL;
+            return this.map[my][mx] === this.tileTypes.WALL;
         }
     };
     // Place a wall at x=4
-    mapManager.map[0][4] = { type: 1 };
+    mapManager.map[0][4] = 1;
 
     const pathManager = new PathfindingManager(mapManager);
     const motion = new MotionManager(mapManager, pathManager, null);
