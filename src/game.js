@@ -23,6 +23,7 @@ import { NarrativeManager } from './managers/narrativeManager.js';
 import { TurnManager } from './managers/turnManager.js';
 import { KnockbackEngine } from './systems/KnockbackEngine.js';
 import { SupportEngine } from './systems/SupportEngine.js';
+import { InventoryEngine } from './systems/InventoryEngine.js';
 import { SKILLS } from './data/skills.js';
 import { EFFECTS } from './data/effects.js';
 import { Item } from './entities.js';
@@ -108,6 +109,7 @@ export class Game {
         this.turnManager = new TurnManager();
         this.narrativeManager = new NarrativeManager();
         this.supportEngine = new SupportEngine();
+        this.inventoryEngine = new InventoryEngine(this.eventManager);
         this.tooltipEngine = new TooltipEngine();
         this.factory = new CharacterFactory(assets, this);
 
@@ -129,13 +131,15 @@ export class Game {
                 name !== 'EffectManager' &&
                 name !== 'SkillManager' &&
                 name !== 'ProjectileManager' &&
-                name !== 'UIManager'
+                name !== 'UIManager' &&
+                name !== 'MercenaryManager'
         );
         for (const managerName of otherManagerNames) {
             this.managers[managerName] = new Managers[managerName](this.eventManager, assets, this.factory);
         }
+        this.managers.MercenaryManager = new Managers.MercenaryManager(this.eventManager, assets, this.factory, this.inventoryEngine);
 
-        this.managers.UIManager = new Managers.UIManager(this.tooltipEngine);
+        this.managers.UIManager = new Managers.UIManager(this.tooltipEngine, this.inventoryEngine);
         this.uiManager = this.managers.UIManager;
 
         this.managers.EffectManager = new Managers.EffectManager(
@@ -290,9 +294,10 @@ export class Game {
         });
         player.ai = null; // disable any automatic skills for the player
         player.equipmentRenderManager = this.equipmentRenderManager;
+        this.inventoryEngine.createInventory(player.id, 24);
         this.gameState = {
             player,
-            inventory: [],
+            inventory: this.inventoryEngine.getInventory(player.id),
             gold: 1000,
             statPoints: 5,
             camera: { x: 0, y: 0 },
@@ -559,7 +564,12 @@ export class Game {
         const saveBtn = document.getElementById('save-game-btn');
         if (saveBtn) {
             saveBtn.onclick = () => {
-                const saveData = this.saveLoadManager.gatherSaveData(this.gameState, this.monsterManager, this.mercenaryManager);
+                const saveData = this.saveLoadManager.gatherSaveData(
+                    this.gameState,
+                    this.monsterManager,
+                    this.mercenaryManager,
+                    this.inventoryEngine
+                );
                 console.log("--- GAME STATE SAVED (SNAPSHOT) ---");
                 console.log(saveData);
                 this.eventManager.publish('log', { message: '게임 상태 스냅샷이 콘솔에 저장되었습니다.' });
@@ -973,9 +983,11 @@ export class Game {
         });
 
         this.uiManager.init({
+            eventManager: this.eventManager,
             onStatUp: this.handleStatUp,
             onItemUse: (itemIndex) => {
-                const item = gameState.inventory[itemIndex];
+                const items = this.inventoryEngine.getInventory(gameState.player.id);
+                const item = items[itemIndex];
                 if (!item) return;
 
                 if (item.tags.includes('weapon') || item.tags.includes('armor') ||
@@ -988,12 +1000,12 @@ export class Game {
                     if (item.quantity > 1) {
                         item.quantity -= 1;
                     } else {
-                        gameState.inventory.splice(itemIndex, 1);
+                        this.inventoryEngine.removeItem(gameState.player.id, itemIndex);
                     }
                 } else if (item.tags.includes('pet') || item.type === 'pet') {
                     this.petManager.equip(gameState.player, item, 'fox');
                 }
-                this.uiManager.renderInventory(gameState);
+                this.uiManager.renderInventory(gameState.player);
             },
             onConsumableUse: (itemIndex) => {
                 const item = gameState.player.consumables[itemIndex];
@@ -1015,10 +1027,11 @@ export class Game {
                 this.uiManager.updateUI(gameState);
             },
             onEquipItem: (entity, item) => {
-                const targetInventory = entity.isPlayer ? gameState.inventory : (entity.consumables || entity.inventory || gameState.inventory);
-                this.equipmentManager.equip(entity, item, targetInventory);
-                gameState.inventory = gameState.inventory.filter(i => i !== item);
-                this.uiManager.renderInventory(gameState);
+                const targetInv = this.inventoryEngine.getInventory(entity.id) || (entity.consumables || entity.inventory);
+                this.equipmentManager.equip(entity, item, targetInv);
+                const idx = this.inventoryEngine.getInventory(gameState.player.id).indexOf(item);
+                if (idx !== -1) this.inventoryEngine.removeItem(gameState.player.id, idx);
+                this.uiManager.renderInventory(gameState.player);
             }
         });
 
@@ -1134,35 +1147,31 @@ export class Game {
             player.y + player.height > item.y
         );
         if (itemToPick) {
+            let picked = false;
             if (itemToPick.baseId === 'gold' || itemToPick.name === 'gold') {
                 gameState.gold += 10;
                 this.combatLogManager.add(`골드를 주웠습니다! 현재 골드: ${gameState.gold}`);
+                picked = true;
             } else if (itemToPick.tags?.includes('consumable')) {
                 if (!player.addConsumable(itemToPick)) {
-                    const existing = gameState.inventory.find(i => i.baseId === itemToPick.baseId);
-                    if (existing) {
-                        existing.quantity += 1;
-                    } else {
-                        gameState.inventory.push(itemToPick);
-                    }
+                    this.inventoryEngine.addItem(player.id, itemToPick);
                 }
                 this.combatLogManager.add(`${itemToPick.name}을(를) 획득했습니다.`);
+                picked = true;
             } else {
-                const existing = gameState.inventory.find(i => i.baseId === itemToPick.baseId);
-                const invItem = existing || itemToPick;
-                if (existing) {
-                    existing.quantity += 1;
-                } else {
-                    gameState.inventory.push(itemToPick);
-                }
-                this.combatLogManager.add(`${itemToPick.name}을(를) 인벤토리에 추가했습니다.`);
-                if (itemToPick.tags.includes('pet') || itemToPick.type === 'pet') {
-                    player.addConsumable(invItem);
-                    this.petManager.equip(player, invItem, 'fox');
-                    // 아이템은 그대로 보유하도록 남겨둔다
+                const success = this.inventoryEngine.addItem(player.id, itemToPick);
+                if (success) {
+                    this.combatLogManager.add(`${itemToPick.name}을(를) 인벤토리에 추가했습니다.`);
+                    if (itemToPick.tags.includes('pet') || itemToPick.type === 'pet') {
+                        player.addConsumable(itemToPick);
+                        this.petManager.equip(player, itemToPick, 'fox');
+                    }
+                    picked = true;
                 }
             }
-            this.itemManager.removeItem(itemToPick);
+            if (picked) {
+                this.itemManager.removeItem(itemToPick);
+            }
         }
         this.fogManager.update(player, mapManager);
         const context = {
@@ -1195,8 +1204,9 @@ export class Game {
         this.vfxManager.update();
         this.speechBubbleManager.update();
         // micro-world engine runs after visuals and item logic
+        const playerInv = this.inventoryEngine.getInventory(gameState.player.id) || [];
         const allItems = [
-            ...this.gameState.inventory,
+            ...playerInv,
             ...this.itemManager.items,
             ...this.mercenaryManager.mercenaries.flatMap(m => m.consumables || []),
             ...this.monsterManager.monsters.flatMap(m => m.consumables || []),

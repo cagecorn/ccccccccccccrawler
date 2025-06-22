@@ -1,12 +1,12 @@
 export class SaveLoadManager {
     // 게임의 현재 상태를 하나의 객체로 수집 (스냅샷 찍기)
-    gatherSaveData(gameState, monsterManager, mercenaryManager) {
+    gatherSaveData(gameState, monsterManager, mercenaryManager, inventoryEngine = null) {
         const saveData = {
             timestamp: new Date().toISOString(),
             player: gameState.player.getSaveState(),
             gold: gameState.gold,
             statPoints: gameState.statPoints,
-            inventory: gameState.inventory.map(item => item.name), // 아이템은 이름만 저장
+            inventory: (inventoryEngine?.getInventory(gameState.player.id) || gameState.inventory || []).map(item => item.name),
             monsters: monsterManager.monsters.map(m => m.getSaveState()),
             mercenaries: mercenaryManager.mercenaries.map(m => m.getSaveState()),
         };
