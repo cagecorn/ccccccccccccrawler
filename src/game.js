@@ -17,6 +17,7 @@ import { MetaAIManager, STRATEGY } from './managers/ai-managers.js';
 import { SaveLoadManager } from './managers/saveLoadManager.js';
 import { LayerManager } from './managers/layerManager.js';
 import { PathfindingManager } from './managers/pathfindingManager.js';
+import { AIPathfindingEngine } from './ai/AIPathfindingEngine.js';
 import { MovementManager } from './managers/movementManager.js';
 import { FogManager } from './managers/fogManager.js';
 import { NarrativeManager } from './managers/narrativeManager.js';
@@ -179,6 +180,7 @@ export class Game {
 
         this.itemFactory = new ItemFactory(assets);
         this.pathfindingManager = new PathfindingManager(this.mapManager);
+        this.aiPathfindingEngine = new AIPathfindingEngine(this.pathfindingManager);
         this.motionManager = new Managers.MotionManager(this.mapManager, this.pathfindingManager);
         this.knockbackEngine = new KnockbackEngine(this.motionManager, this.vfxManager);
         this.projectileManager = new Managers.ProjectileManager(
@@ -1078,7 +1080,7 @@ export class Game {
     }
 
     update = (deltaTime) => {
-        const { gameState, mercenaryManager, monsterManager, itemManager, mapManager, inputHandler, effectManager, turnManager, metaAIManager, eventManager, equipmentManager, pathfindingManager, microEngine, microItemAIManager } = this;
+        const { gameState, mercenaryManager, monsterManager, itemManager, mapManager, inputHandler, effectManager, turnManager, metaAIManager, eventManager, equipmentManager, pathfindingManager, aiPathfindingEngine, microEngine, microItemAIManager } = this;
         if (gameState.isPaused || gameState.isGameOver) return;
 
         const allEntities = [gameState.player, ...mercenaryManager.mercenaries, ...monsterManager.monsters, ...(this.petManager?.pets || [])];
@@ -1161,6 +1163,7 @@ export class Game {
             monsterManager,
             mercenaryManager,
             pathfindingManager,
+            aiPathfindingEngine: this.aiPathfindingEngine,
             motionManager: this.motionManager,
             movementManager: this.movementManager,
             projectileManager: this.projectileManager,

@@ -76,9 +76,8 @@ export class CompositeAI extends AIArchetype {
 // --- 전사형 AI ---
 export class MeleeAI extends AIArchetype {
     decideAction(self, context) {
-        const { enemies, targetingEngine, pathfindingManager, player, mapManager, visionEngine } = context;
+        const { enemies, visionEngine, targetingEngine, aiPathfindingEngine } = context;
 
-        // 1. 타겟 결정
         const visibleEnemies = visionEngine
             ? visionEngine.getVisibleTargets(self, enemies)
             : enemies.filter(e => Math.hypot(e.x - self.x, e.y - self.y) < self.visionRange);
@@ -88,52 +87,47 @@ export class MeleeAI extends AIArchetype {
         if (mbti.includes('T')) rule = 'weakest';
         else if (mbti.includes('F')) rule = 'ally_focus';
 
-        const target = targetingEngine?.findBestTarget(self, visibleEnemies, { rule, context }) ?? null;
-
-        // 2. 타겟이 있을 경우 (전투 로직)
-        if (target) {
-            const distance = Math.hypot(target.x - self.x, target.y - self.y);
-
-            // 2-1. 공격 범위 안에 있다면 즉시 공격
-            if (distance < self.attackRange) {
-                return { type: 'attack', target };
-            }
-
-            // 2-2. 공격 범위 밖에 있다면, 길을 찾아서 이동
-            if (pathfindingManager && mapManager) {
-                const sx = Math.floor(self.x / mapManager.tileSize);
-                const sy = Math.floor(self.y / mapManager.tileSize);
-                const tx = Math.floor(target.x / mapManager.tileSize);
-                const ty = Math.floor(target.y / mapManager.tileSize);
-                const path = pathfindingManager.findPath(sx, sy, tx, ty, () => false);
-                if (path && path.length > 0) {
-                    return { type: 'follow_path', path, target };
-                }
-            }
+        const target = targetingEngine
+            ? targetingEngine.findBestTarget(self, visibleEnemies, { rule, context })
+            : visibleEnemies[0] || null;
+        let action;
+        if (aiPathfindingEngine) {
+            action = aiPathfindingEngine.decideAction(self, target, context);
         } else {
-            // 3. 타겟이 없을 경우 (비전투 로직 - '목줄'과 대기)
-            const leashRadius = 300; // 플레이어를 따라다니는 최대 반경 (픽셀 단위)
-            const distanceToPlayer = Math.hypot(self.x - player.x, self.y - player.y);
-
-            // 3-1. '목줄' 반경을 벗어났다면 플레이어에게 돌아오기
-            if (distanceToPlayer > leashRadius && pathfindingManager && mapManager) {
-                const sx = Math.floor(self.x / mapManager.tileSize);
-                const sy = Math.floor(self.y / mapManager.tileSize);
-                const px = Math.floor(player.x / mapManager.tileSize);
-                const py = Math.floor(player.y / mapManager.tileSize);
-                const pathToPlayer = pathfindingManager.findPath(sx, sy, px, py, () => false);
-                if (pathToPlayer && pathToPlayer.length > 0) {
-                    return { type: 'follow_path', path: pathToPlayer, target: player };
+            const { pathfindingManager, mapManager, player } = context;
+            if (target) {
+                const dist = Math.hypot(target.x - self.x, target.y - self.y);
+                if (dist < self.attackRange) {
+                    action = { type: 'attack', target };
+                } else if (pathfindingManager && mapManager) {
+                    const sx = Math.floor(self.x / mapManager.tileSize);
+                    const sy = Math.floor(self.y / mapManager.tileSize);
+                    const tx = Math.floor(target.x / mapManager.tileSize);
+                    const ty = Math.floor(target.y / mapManager.tileSize);
+                    const path = pathfindingManager.findPath(sx, sy, tx, ty, () => false);
+                    if (path && path.length > 0) {
+                        action = { type: 'follow_path', path, target };
+                    }
+                }
+            } else {
+                const leashRadius = 300;
+                const distanceToPlayer = Math.hypot(self.x - player.x, self.y - player.y);
+                if (distanceToPlayer > leashRadius && pathfindingManager && mapManager) {
+                    const sx = Math.floor(self.x / mapManager.tileSize);
+                    const sy = Math.floor(self.y / mapManager.tileSize);
+                    const px = Math.floor(player.x / mapManager.tileSize);
+                    const py = Math.floor(player.y / mapManager.tileSize);
+                    const pathToPlayer = pathfindingManager.findPath(sx, sy, px, py, () => false);
+                    if (pathToPlayer && pathToPlayer.length > 0) {
+                        action = { type: 'follow_path', path: pathToPlayer, target: player };
+                    }
                 }
             }
-            // 3-2. 목줄 반경 안이라면, 잠시 대기
-            else {
-                return { type: 'idle' };
-            }
+            if (!action) action = { type: 'idle' };
         }
 
-        // 아무것도 해당하지 않으면 대기
-        return { type: 'idle' };
+        self.currentTarget = target || context.player;
+        return action;
     }
 }
 
